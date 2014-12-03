@@ -1,1 +1,1 @@
-web: target/universal/stage/bin/scala-getting-started
+worker: target/scala-2.11/classes/com/pointswarm/process
