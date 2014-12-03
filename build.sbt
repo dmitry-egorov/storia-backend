@@ -1,4 +1,4 @@
-//packageArchetype.java_application
+enablePlugins(JavaAppPackaging)
 
 name := """storia-worker"""
 
