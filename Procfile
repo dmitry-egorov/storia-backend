@@ -1,1 +1,2 @@
-worker: target/scala-2.11/storia-worker
+worker: target/universal/stage/bin/storia-worker
+
