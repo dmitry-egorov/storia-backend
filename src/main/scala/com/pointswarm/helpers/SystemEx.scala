@@ -2,7 +2,7 @@ package com.pointswarm.helpers
 
 object SystemEx
 {
-    def waitForShutdown =
+    def waitForShutdown() =
     {
         val shutdownLock = new Object()
 
