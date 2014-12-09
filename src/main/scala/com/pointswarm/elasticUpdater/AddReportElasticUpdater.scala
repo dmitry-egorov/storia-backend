@@ -27,7 +27,7 @@ class AddReportElasticUpdater(fb: Firebase, elastic: Client)(implicit f: Formats
     {
         val content = command.content
         val eventId = command.eventId
-        val userId = command.profileId
+        val userId = command.authorId
 
         val docId = eventId.value + "_" + userId.value
         val textEntry = new TextIndexEntry(eventId, content)
