@@ -2,27 +2,27 @@ package com.pointswarm.elasticUpdater
 
 import com.firebase.client.Firebase
 import com.pointswarm.common.{CommonFormats, EventId, SuccessResponse, TextIndexEntry}
+import com.pointswarm.tools.elastic._
 import com.pointswarm.tools.extensions.SanitizeExtensions.StringSanitizer
 import com.pointswarm.tools.processing.FirebaseCommandProcessor
-import com.pointswarm.tools.elastic._
 import org.json4s.Formats
 import rx.lang.scala.Subscription
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object ElasticUpdater
+object AddEventElasticUpdater
 {
     implicit val formats = CommonFormats.formats
 
     def run(fb: Firebase, elastic: Client): Subscription =
     {
-        val updater = new ElasticUpdater(fb, elastic)
+        val updater = new AddEventElasticUpdater(fb, elastic)
         FirebaseCommandProcessor.run(fb.child("commands").child("addEvent"), "addEvent", updater.addElasticText)
     }
 }
 
-class ElasticUpdater(fb: Firebase, elastic: Client)(implicit f: Formats)
+class AddEventElasticUpdater(fb: Firebase, elastic: Client)(implicit f: Formats)
 {
     def addElasticText(command: AddEventCommand): Future[SuccessResponse] =
     {
@@ -36,6 +36,9 @@ class ElasticUpdater(fb: Firebase, elastic: Client)(implicit f: Formats)
         .map(_ => new SuccessResponse)
     }
 }
+
+
+
 
 
 

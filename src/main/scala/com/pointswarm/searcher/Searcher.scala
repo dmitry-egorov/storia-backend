@@ -5,7 +5,6 @@ import com.pointswarm.common._
 import com.pointswarm.tools.elastic._
 import com.pointswarm.tools.processing.FirebaseCommandProcessor
 import com.pointswarm.searcher.SearchResponse.EventIdsEx
-import CommonFormats
 import org.json4s.Formats
 import rx.lang.scala.Subscription
 

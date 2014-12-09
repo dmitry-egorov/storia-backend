@@ -2,7 +2,7 @@ package com.pointswarm.application
 
 import com.firebase.client.Firebase
 import com.pointswarm.tools.elastic.Client
-import com.pointswarm.elasticUpdater.ElasticUpdater
+import com.pointswarm.elasticUpdater.{AddReportElasticUpdater, AddEventElasticUpdater}
 import com.pointswarm.tools.helpers.SystemEx
 import com.pointswarm.application.migration.Migrator
 import com.pointswarm.searcher.Searcher
@@ -21,14 +21,16 @@ object WorkerApp extends App
     var fb = new Firebase(WorkerConfig.fbUrl)
 
     var searcherSubs = Searcher.run(fb, elastic)
-    var elasticUpdaterSubs = ElasticUpdater.run(fb, elastic)
+    var addEventElasticUpdaterSubs = AddEventElasticUpdater.run(fb, elastic)
+    var addReportElasticUpdaterSubs = AddReportElasticUpdater.run(fb, elastic)
 
     SystemEx.waitForShutdown()
 
     println("Shutting down...")
 
     searcherSubs.unsubscribe()
-    elasticUpdaterSubs.unsubscribe()
+    addEventElasticUpdaterSubs.unsubscribe()
+    addReportElasticUpdaterSubs.unsubscribe()
 
     println("Shut down.")
 }

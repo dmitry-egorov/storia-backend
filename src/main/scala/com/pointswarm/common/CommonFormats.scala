@@ -7,5 +7,6 @@ import org.json4s.jackson.Serialization
 object CommonFormats
 {
     implicit val formats = Serialization.formats(NoTypeHints) +
-                           new SingleValueCaseClassSerializer[EventId](x => new EventId(x))
+                           new SingleValueCaseClassSerializer[EventId](x => new EventId(x)) +
+                           new SingleValueCaseClassSerializer[ProfileId](x => new ProfileId(x))
 }
