@@ -1,11 +1,11 @@
-package com.pointswarm.elastic
+package com.pointswarm.tools.elastic
 
 import java.nio.charset.StandardCharsets
 
 import com.netaporter.uri.Uri
 import com.ning.http.client.Response
-import com.pointswarm.elastic.Client._
-import com.pointswarm.extensions.SerializationExtensions._
+import com.pointswarm.tools.elastic.Client._
+import com.pointswarm.tools.extensions.SerializationExtensions._
 import dispatch.{Http, url}
 import org.json4s.Formats
 

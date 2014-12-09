@@ -2,10 +2,10 @@ package com.pointswarm.searcher
 
 import com.firebase.client.Firebase
 import com.pointswarm.common._
-import com.pointswarm.elastic._
-import com.pointswarm.processing.FirebaseCommandProcessor
+import com.pointswarm.tools.elastic._
+import com.pointswarm.tools.processing.FirebaseCommandProcessor
 import com.pointswarm.searcher.SearchResponse.EventIdsEx
-import com.pointswarm.serialization.CommonFormats
+import CommonFormats
 import org.json4s.Formats
 import rx.lang.scala.Subscription
 

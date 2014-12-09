@@ -1,10 +1,10 @@
-package com.pointswarm.extensions
+package com.pointswarm.tools.extensions
 
 import com.firebase.client.Firebase.CompletionListener
 import com.firebase.client.{ChildEventListener, DataSnapshot, Firebase, FirebaseError}
-import com.pointswarm.extensions.JavaObjectExtensions.JavaObjectEx
-import com.pointswarm.extensions.ObjectExtensions.AnyEx
-import com.pointswarm.extensions.SerializationExtensions.{AnyRefEx, StringEx}
+import com.pointswarm.tools.extensions.JavaObjectExtensions.JavaObjectEx
+import com.pointswarm.tools.extensions.ObjectExtensions.AnyEx
+import com.pointswarm.tools.extensions.SerializationExtensions.{AnyRefEx, StringEx}
 import org.json4s.Formats
 import rx.lang.scala.{Observable, Subscription}
 

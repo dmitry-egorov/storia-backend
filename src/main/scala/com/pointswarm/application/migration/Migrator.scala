@@ -1,6 +1,6 @@
-package com.pointswarm.migration
+package com.pointswarm.application.migration
 
-import com.pointswarm.elastic.Client
+import com.pointswarm.tools.elastic.Client
 
 import scala.concurrent.Future
 

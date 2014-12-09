@@ -1,4 +1,4 @@
-package com.pointswarm.extensions
+package com.pointswarm.tools.extensions
 
 import java.io.{PrintWriter, StringWriter}
 

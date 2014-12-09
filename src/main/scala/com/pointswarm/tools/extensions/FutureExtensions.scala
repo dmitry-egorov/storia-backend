@@ -1,4 +1,4 @@
-package com.pointswarm.extensions
+package com.pointswarm.tools.extensions
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

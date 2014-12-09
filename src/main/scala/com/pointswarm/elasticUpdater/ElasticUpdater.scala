@@ -1,11 +1,10 @@
 package com.pointswarm.elasticUpdater
 
 import com.firebase.client.Firebase
-import com.pointswarm.common.{EventId, SuccessResponse, TextIndexEntry}
-import com.pointswarm.extensions.SanitizeExtensions.StringSanitizer
-import com.pointswarm.processing.FirebaseCommandProcessor
-import com.pointswarm.serialization.CommonFormats
-import com.pointswarm.elastic._
+import com.pointswarm.common.{CommonFormats, EventId, SuccessResponse, TextIndexEntry}
+import com.pointswarm.tools.extensions.SanitizeExtensions.StringSanitizer
+import com.pointswarm.tools.processing.FirebaseCommandProcessor
+import com.pointswarm.tools.elastic._
 import org.json4s.Formats
 import rx.lang.scala.Subscription
 

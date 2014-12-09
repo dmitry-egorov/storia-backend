@@ -1,4 +1,4 @@
-package com.pointswarm.serialization
+package com.pointswarm.tools.serialization
 
 import org.json4s.CustomSerializer
 import org.json4s.JsonAST._

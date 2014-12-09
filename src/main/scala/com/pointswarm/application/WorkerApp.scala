@@ -1,10 +1,10 @@
 package com.pointswarm.application
 
 import com.firebase.client.Firebase
-import com.pointswarm.elastic.Client
+import com.pointswarm.tools.elastic.Client
 import com.pointswarm.elasticUpdater.ElasticUpdater
-import com.pointswarm.helpers.SystemEx
-import com.pointswarm.migration.Migrator
+import com.pointswarm.tools.helpers.SystemEx
+import com.pointswarm.application.migration.Migrator
 import com.pointswarm.searcher.Searcher
 
 import scala.concurrent.Await

@@ -1,4 +1,4 @@
-package com.pointswarm.extensions
+package com.pointswarm.tools.extensions
 
 object SanitizeExtensions
 {

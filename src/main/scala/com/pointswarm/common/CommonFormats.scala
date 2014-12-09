@@ -1,6 +1,6 @@
-package com.pointswarm.serialization
+package com.pointswarm.common
 
-import com.pointswarm.common.EventId
+import com.pointswarm.tools.serialization.SingleValueCaseClassSerializer
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 

@@ -1,4 +1,4 @@
-package com.pointswarm.extensions
+package com.pointswarm.tools.extensions
 
 import org.json4s.Formats
 import org.json4s.jackson.Serialization
