@@ -1,3 +1,3 @@
 package com.pointswarm.processing
 
-case class Response(success: Boolean, data: Product, error: String)
+case class Response(ok: Boolean, data: Product, error: String)

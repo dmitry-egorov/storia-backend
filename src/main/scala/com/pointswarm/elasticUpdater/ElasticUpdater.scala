@@ -6,27 +6,26 @@ import com.pointswarm.extensions.SanitizeExtensions.StringSanitizer
 import com.pointswarm.processing.FirebaseCommandProcessor
 import com.pointswarm.serialization.CommonFormats
 import com.pointswarm.elastic._
+import org.json4s.Formats
 import rx.lang.scala.Subscription
-//import wabisabi.Client
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object ElasticUpdater
 {
-    def run(fb: Firebase, elastic: Client) = new ElasticUpdater(fb, elastic).run()
-}
-
-class ElasticUpdater(fb: Firebase, elastic: Client)
-{
     implicit val formats = CommonFormats.formats
 
-    def run(): Subscription =
+    def run(fb: Firebase, elastic: Client): Subscription =
     {
-        FirebaseCommandProcessor.run(fb, "addEvent", addElasticText)
+        val updater = new ElasticUpdater(fb, elastic)
+        FirebaseCommandProcessor.run(fb.child("commands").child("addEvent"), "addEvent", updater.addElasticText)
     }
+}
 
-    private def addElasticText(command: AddEventCommand): Future[SuccessResponse] =
+class ElasticUpdater(fb: Firebase, elastic: Client)(implicit f: Formats)
+{
+    def addElasticText(command: AddEventCommand): Future[SuccessResponse] =
     {
         val title = command.title
         val id = new EventId(title.sanitize)
@@ -34,7 +33,7 @@ class ElasticUpdater(fb: Firebase, elastic: Client)
 
         elastic
         .index("texts", "text")
-        .doc(textEntry)
+        .doc(id.value, textEntry)
         .map(_ => new SuccessResponse)
     }
 }

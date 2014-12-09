@@ -64,10 +64,10 @@ class Client(uri: String)
             .map(_ => ())
         }
 
-        def doc(doc: AnyRef)(implicit f: Formats): Future[Unit] =
+        def doc(id: String, doc: AnyRef)(implicit f: Formats): Future[Unit] =
             Http
             {
-                (baseUrl / indexName / indexType)
+                (baseUrl / indexName / indexType / id)
                 .setBody(doc.toJson)
             }
             .ensureOk

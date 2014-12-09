@@ -2,10 +2,11 @@ package com.pointswarm.searcher
 
 import com.firebase.client.Firebase
 import com.pointswarm.common._
+import com.pointswarm.elastic._
 import com.pointswarm.processing.FirebaseCommandProcessor
 import com.pointswarm.searcher.SearchResponse.EventIdsEx
 import com.pointswarm.serialization.CommonFormats
-import com.pointswarm.elastic._
+import org.json4s.Formats
 import rx.lang.scala.Subscription
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,19 +14,19 @@ import scala.concurrent.Future
 
 object Searcher
 {
-    def run(fb: Firebase, elastic: Client) = new Searcher(fb, elastic).run()
-}
-
-class Searcher(fb: Firebase, elastic: Client)
-{
     implicit val formats = CommonFormats.formats
 
-    def run(): Subscription =
+    def run(fb: Firebase, elastic: Client): Subscription =
     {
-        FirebaseCommandProcessor.run(fb, "search", elasticSearch)
+        val searcher = new Searcher(fb, elastic)
+        FirebaseCommandProcessor.run(fb.child("commands").child("search"), "search", searcher.elasticSearch)
     }
+}
 
-    private def elasticSearch(command: SearchCommand): Future[SearchResponse] =
+class Searcher(fb: Firebase, elastic: Client)(implicit f: Formats)
+{
+
+    def elasticSearch(command: SearchCommand): Future[SearchResponse] =
     {
         val queryText = command.query.toLowerCase
 

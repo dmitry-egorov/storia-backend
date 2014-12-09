@@ -16,20 +16,22 @@ import scala.util._
 
 object FirebaseCommandProcessor
 {
-    def run[TCommand <: AnyRef](fb: Firebase, commandName: String, processor: TCommand => Future[Product])(implicit m: Manifest[TCommand], fmt: Formats): Subscription =
+    def run[TCommand <: AnyRef](commandsRef: Firebase, commandName: String, processor: TCommand => Future[Product])(implicit m: Manifest[TCommand], fmt: Formats): Subscription =
     {
-        new FirebaseCommandProcessor[TCommand](fb, commandName)
+        new FirebaseCommandProcessor[TCommand](commandsRef, commandName)
         .run(processor)
     }
 }
 
-class FirebaseCommandProcessor[TCommand <: AnyRef](fb: Firebase, commandName: String)(implicit m: Manifest[TCommand], f: Formats)
+class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, commandName: String)(implicit m: Manifest[TCommand], f: Formats)
 {
+    private lazy val queueRef = commandsRef.child("queue")
+    private lazy val processedRef = commandsRef.child("processed")
+    private lazy val resultsRef = commandsRef.child("results")
+
     def run(process: TCommand => Future[Product]): Subscription =
     {
-        fb
-        .child("commands")
-        .child(commandName)
+        queueRef
         .observe
         .collect
         {
@@ -39,7 +41,7 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](fb: Firebase, commandName: St
         .subscribe()
     }
 
-    def processCommand(process: TCommand => Future[Product], x: DataSnapshot): Future[Unit] =
+    private def processCommand(process: TCommand => Future[Product], x: DataSnapshot): Future[Unit] =
         async
         {
             val id = new CommandId(x.getKey)
@@ -57,7 +59,8 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](fb: Firebase, commandName: St
                     await(removeCommand(id))
 
                     result
-                }.flatRecoverAsTry
+                }
+                .flatRecoverAsTry
 
             val complete = await(done)
 
@@ -71,35 +74,43 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](fb: Firebase, commandName: St
 
     private def removeCommand(commandId: CommandId): Future[Unit] =
     {
-        fb
-        .child("commands")
-        .child(commandName)
-        .child(commandId.value)
-        .remove()
+        queuedRef(commandId) remove()
+    }
+
+    private def queuedRef(commandId: CommandId): Firebase =
+    {
+        queueRef.child(commandId.value)
     }
 
     private def saveProcessed(commandId: CommandId, command: TCommand): Future[Unit] =
     {
-        fb
-        .child("processedCommands")
-        .child(commandName)
-        .child(commandId.value)
-        .set(command)
+        processedRef(commandId) set command
+    }
+
+    private def processedRef(commandId: CommandId): Firebase =
+    {
+        processedRef.child(commandId.value)
     }
 
     private def saveResponse(commandId: CommandId, result: Try[Product]): Future[Unit] =
     {
-        val response = result match
+        val response = responseFrom(result)
+
+        resultRef(commandId) set response
+    }
+
+    private def responseFrom(result: Try[Product]): Response =
+    {
+        result match
         {
             case Success(data)  => new Response(true, data, null)
             case Failure(cause) => new Response(false, Nil, cause.getMessage)
         }
+    }
 
-        fb
-        .child("results")
-        .child(commandName)
-        .child(commandId.value)
-        .set(response)
+    private def resultRef(commandId: CommandId): Firebase =
+    {
+        resultsRef.child(commandId.value)
     }
 
     private def logProcessed(commandId: CommandId, result: Try[Product])
