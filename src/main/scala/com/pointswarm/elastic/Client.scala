@@ -1,5 +1,7 @@
 package com.pointswarm.elastic
 
+import java.nio.charset.StandardCharsets
+
 import com.netaporter.uri.Uri
 import com.ning.http.client.Response
 import com.pointswarm.elastic.Client._
@@ -16,7 +18,7 @@ class Client(uri: String)
 
     def search(indexName: String): SearchDefinition = new SearchDefinition(indexName)
 
-    def index(indexName: String): IndexDefinition = new IndexDefinition(indexName)
+    def index(indexName: String, indexType: String): IndexDefinition = new IndexDefinition(indexName, indexType)
 
     private def prepareUrl() =
     {
@@ -44,22 +46,32 @@ class Client(uri: String)
             Http
             {
                 (baseUrl / indexName / "_search")
-                .setBody( s"""{"query" : {"term" : { "$termName" : "$queryText" }}}""")
+                .setBody( s"""{"query" : {"term" : { "$termName" : "$queryText" }}}""".getBytes(StandardCharsets.UTF_8))
             }
             .ensureOk
             .map(_.hits[T])
     }
 
-    class IndexDefinition(indexName: String)
+    class IndexDefinition(indexName: String, indexType: String)
     {
+        def create() =
+        {
+            Http
+            {
+                baseUrl / indexName
+            }
+            //.ensureOk
+            .map(_ => ())
+        }
+
         def doc(doc: AnyRef)(implicit f: Formats): Future[Unit] =
             Http
             {
-                (baseUrl / indexName / "t")
+                (baseUrl / indexName / indexType)
                 .setBody(doc.toJson)
             }
             .ensureOk
-            .map(_ => {})
+            .map(_ => ())
     }
 
 }
@@ -86,11 +98,17 @@ object Client
 
         def assertOk() =
             if (200 until 299 contains response.getStatusCode)
+            {
                 response
+            }
             else
-                throw new RuntimeException(s"${response.getStatusCode } (${response.getStatusText }): ${
-                    response.getResponseBody
-                }")
+            {
+                val code = response.getStatusCode
+                val text = response.getStatusText
+                val body = response.getResponseBody
+
+                throw new RuntimeException(s"$code ($text): $body")
+            }
     }
 
     private case class ElasticResponse[T](hits: HitsList[T])

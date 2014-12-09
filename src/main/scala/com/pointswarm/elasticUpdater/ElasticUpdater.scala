@@ -33,7 +33,7 @@ class ElasticUpdater(fb: Firebase, elastic: Client)
         val textEntry = new TextIndexEntry(id, title)
 
         elastic
-        .index("texts")
+        .index("texts", "text")
         .doc(textEntry)
         .map(_ => new SuccessResponse)
     }

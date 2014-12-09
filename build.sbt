@@ -14,7 +14,9 @@ libraryDependencies ++= Seq(
   "org.json4s" %% "json4s-jackson" % "3.2.11",
   "org.scala-lang.modules" %% "scala-async" % "0.9.2",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
-  "com.netaporter" %% "scala-uri" % "0.4.3"
+  "com.netaporter" %% "scala-uri" % "0.4.3",
+  "wabisabi" %% "wabisabi" % "2.0.10"
 )
 
 resolvers += "gphat" at "https://raw.github.com/gphat/mvn-repo/master/releases/"
+
