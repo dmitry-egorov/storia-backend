@@ -5,9 +5,9 @@ import com.pointswarm.common.{EventId, SuccessResponse, TextIndexEntry}
 import com.pointswarm.extensions.SanitizeExtensions.StringSanitizer
 import com.pointswarm.processing.FirebaseCommandProcessor
 import com.pointswarm.serialization.CommonFormats
-import com.pointswarm.wabisabi.DSL._
+import com.pointswarm.elastic._
 import rx.lang.scala.Subscription
-import wabisabi.Client
+//import wabisabi.Client
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -35,11 +35,7 @@ class ElasticUpdater(fb: Firebase, elastic: Client)
         elastic
         .index("texts")
         .doc(textEntry)
-        .map(x =>
-             {
-                 x.assertOk()
-                 new SuccessResponse
-             })
+        .map(_ => new SuccessResponse)
     }
 }
 

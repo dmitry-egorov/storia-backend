@@ -1,14 +1,12 @@
 package com.pointswarm.searcher
 
 import com.firebase.client.Firebase
-import com.ning.http.client.Response
 import com.pointswarm.common._
 import com.pointswarm.processing.FirebaseCommandProcessor
 import com.pointswarm.searcher.SearchResponse.EventIdsEx
 import com.pointswarm.serialization.CommonFormats
-import com.pointswarm.wabisabi.DSL._
+import com.pointswarm.elastic._
 import rx.lang.scala.Subscription
-import wabisabi.Client
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,14 +31,13 @@ class Searcher(fb: Firebase, elastic: Client)
 
         elastic
         .search("texts")
-        .term("text", queryText)
+        .term[TextIndexEntry]("text", queryText)
         .map(toResponse)
     }
 
-    private def toResponse(elasticResponse: Response): SearchResponse =
+    private def toResponse(elasticResponse: List[TextIndexEntry]): SearchResponse =
     {
         elasticResponse
-        .hits[TextIndexEntry]
         .map(_.eventId)
         .distinct
         .toSearchResponse
