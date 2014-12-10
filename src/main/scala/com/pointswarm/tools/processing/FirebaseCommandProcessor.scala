@@ -42,11 +42,23 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
     }
 
     private def processCommand(process: TCommand => Future[Product], x: DataSnapshot): Future[Unit] =
+    {
+        val id = new CommandId(x.getKey)
+
+        Try(x.value[TCommand]) match
+        {
+            case Success(command) =>
+                processCommand(process, id, command)
+            case Failure(cause)   =>
+                logFailedToParseCommand(id, cause)
+                Future.successful(())
+        }
+    }
+
+
+    private def processCommand(process: TCommand => Future[Product], id: CommandId, command: TCommand): Future[Unit] =
         async
         {
-            val id = new CommandId(x.getKey)
-            val command = x.value[TCommand]
-
             logCommandReceived(id, command)
 
             val result = await(process(command).recoverAsTry)
@@ -66,6 +78,11 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
 
             logProcessed(id, complete)
         }
+
+    private def logFailedToParseCommand(commandId: CommandId, throwable: Throwable) =
+    {
+        println(s"Failed to parse command '$commandId': ${throwable.fullMessage }")
+    }
 
     private def logCommandReceived(commandId: CommandId, command: TCommand)
     {
