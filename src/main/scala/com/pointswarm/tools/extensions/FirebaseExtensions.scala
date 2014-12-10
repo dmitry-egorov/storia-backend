@@ -2,7 +2,7 @@ package com.pointswarm.tools.extensions
 
 import com.firebase.client.Firebase.CompletionListener
 import com.firebase.client.{ChildEventListener, DataSnapshot, Firebase, FirebaseError}
-import com.pointswarm.tools.extensions.JavaObjectExtensions.JavaObjectEx
+import .JavaObjectEx
 import com.pointswarm.tools.extensions.ObjectExtensions.AnyEx
 import com.pointswarm.tools.extensions.SerializationExtensions.{AnyRefEx, StringEx}
 import org.json4s.Formats
@@ -18,7 +18,7 @@ object FirebaseExtensions
     {
         def value[T](implicit m: Manifest[T], f: Formats): T =
         {
-            ds.getValue.javaToJson.readAs[T]
+            ds.getValue.toScala.toJson.readAs[T]
         }
     }
 
