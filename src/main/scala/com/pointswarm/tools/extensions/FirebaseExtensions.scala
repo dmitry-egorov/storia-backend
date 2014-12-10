@@ -2,7 +2,6 @@ package com.pointswarm.tools.extensions
 
 import com.firebase.client.Firebase.CompletionListener
 import com.firebase.client.{ChildEventListener, DataSnapshot, Firebase, FirebaseError}
-import .JavaObjectEx
 import com.pointswarm.tools.extensions.ObjectExtensions.AnyEx
 import com.pointswarm.tools.extensions.SerializationExtensions.{AnyRefEx, StringEx}
 import org.json4s.Formats
