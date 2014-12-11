@@ -1,7 +1,5 @@
 package com.pointswarm.application
 
-import java.util.concurrent.CancellationException
-
 import com.firebase.client.Firebase
 import com.pointswarm.application.migration.Migrator
 import com.pointswarm.common.CommonFormats
@@ -58,7 +56,7 @@ object WorkerApp extends App
 
         val total = Await.result(run, 10 seconds)
 
-        println(s"Finished. Processed $total events")
+        println(s"Finished. Executed $total commands")
     }
 
     Await.result(run, Duration.Inf)

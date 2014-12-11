@@ -2,10 +2,10 @@ package com.pointswarm.tools.processing
 
 import com.firebase.client._
 import com.pointswarm.tools.extensions.FirebaseExtensions._
+import com.pointswarm.tools.extensions.StringExtensions._
 import com.pointswarm.tools.extensions.ThrowableExtensions.ThrowableEx
 import com.pointswarm.tools.futuristic.FutureExtensions._
 import com.pointswarm.tools.futuristic.ObservableExtensions._
-import com.pointswarm.tools.extensions.StringExtensions._
 import com.pointswarm.tools.futuristic.cancellation.CancellationToken
 import org.json4s.Formats
 
@@ -58,29 +58,32 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
     private def execute(id: CommandId, command: TCommand): Future[Unit] =
         async
         {
-            val all = orderAll(id, command)
+            val allFuture =
+                minions
+                .map(m => order(m, id, command))
+                .all
 
-            val result = await(all)
+            val all = await(allFuture)
 
-            val done =
-                async
-                {
-                    await(saveProcessed(id, command))
-                    await(removeCommand(id))
+            if (all.forall(x => x))
+            {
+                val doneFuture =
+                    async
+                    {
+                        await(saveProcessed(id, command))
+                        await(removeCommand(id))
+                    }
+                    .recoverAsTry
 
-                    result
-                }
-                .recoverAsTry
+                val done = await(doneFuture)
 
-            await(done)
+                logExecuted(id, done)
+            }
+            else
+            {
+                logFailed(id)
+            }
         }
-
-    def orderAll(id: CommandId, command: TCommand): Future[List[Boolean]] =
-    {
-        minions
-        .map(m => order(m, id, command))
-        .all
-    }
 
     private def order(minion: Minion[TCommand], id: CommandId, command: TCommand): Future[Boolean] =
         async
@@ -96,7 +99,7 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
 
             val endResult = await(save)
 
-            logProcessed(name, id, endResult)
+            logExecuted(name, id, endResult)
 
             minionResult.isSuccess
         }
@@ -150,14 +153,30 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
         }
     }
 
-    private def logProcessed(minionName: String, commandId: CommandId, result: Try[AnyRef])
+    private def logExecuted(minionName: String, commandId: CommandId, result: Try[AnyRef])
     {
         result match
         {
-            case Success(response)  => println(s"Command $commandName '$commandId' processed by $minionName: $response")
+            case Success(response)  => println(s"Command $commandName '$commandId' executed by $minionName: $response")
             case Failure(exception) =>
                 val message = exception.fullMessage
                 println(s"Command $commandName '$commandId' failed by $minionName: $message")
         }
+    }
+
+    private def logExecuted(commandId: CommandId, result: Try[Unit])
+    {
+        result match
+        {
+            case Success(_)         => println(s"Command $commandName '$commandId' executed.")
+            case Failure(exception) =>
+                val message = exception.fullMessage
+                println(s"Command $commandName '$commandId' failed: $message")
+        }
+    }
+
+    private def logFailed(commandId: CommandId)
+    {
+        println(s"Command $commandName '$commandId' failed.")
     }
 }
