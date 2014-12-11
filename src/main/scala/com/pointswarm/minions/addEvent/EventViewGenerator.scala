@@ -13,7 +13,7 @@ import scala.concurrent._
 
 class EventViewGenerator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand]
 {
-    def obey(command: AddEventCommand): Future[SuccessResponse] =
+    def execute(command: AddEventCommand): Future[SuccessResponse] =
         async
         {
             val title = command.title
@@ -34,6 +34,8 @@ class EventViewGenerator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext
 
             new SuccessResponse
         }
+
+    def prepare: Future[Unit] = async {}
 }
 
 class EventAlreadyExistsError(id: EventId) extends Exception(s"Event '${id.value }' already exists")

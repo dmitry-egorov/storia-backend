@@ -3,13 +3,12 @@ package com.pointswarm.tools.futuristic
 import com.pointswarm.tools.futuristic.cancellation.CancellationToken
 import rx.lang.scala.Observable
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 
 object ObservableExtensions
 {
 
-    implicit class ObservableEx[T](obs: Observable[T])
+    implicit class ObservableEx[T](obs: Observable[T])(implicit ec: ExecutionContext)
     {
         def completeWith(token: CancellationToken) =
         {
@@ -51,27 +50,27 @@ object ObservableExtensions
 
         def concatMapF[U](f: T => Future[U]) = obs.concatMap(x => Observable.from(f(x)))
 
-        def countF(p: T => Boolean)(implicit ec: ExecutionContext): Future[Int] =
+        def countF(p: T => Boolean): Future[Int] =
         {
             obs.count(p).firstF()
         }
 
-        def countF()(implicit ec: ExecutionContext): Future[Int] =
+        def countF(): Future[Int] =
         {
             obs.count(_ => true).firstF()
         }
 
-        def lastOrElseF(default: => T)(implicit ec: ExecutionContext): Future[T] =
+        def lastOrElseF(default: => T): Future[T] =
         {
             obs.lastOrElse(default).firstF()
         }
 
-        def lastOptionF()(implicit ec: ExecutionContext): Future[Option[T]] =
+        def lastOptionF(): Future[Option[T]] =
         {
             obs.lastOption.firstF()
         }
 
-        def firstF()(implicit ec: ExecutionContext): Future[T] =
+        def firstF(): Future[T] =
         {
             val p = Promise[T]()
 

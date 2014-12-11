@@ -9,23 +9,13 @@ import com.pointswarm.tools.extensions.SerializationExtensions._
 import dispatch.{Http, url}
 import org.json4s.Formats
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent._
 
-class Client(uri: String)
+class Client(uri: String)(implicit ec: ExecutionContext)
 {
-    val baseUrl = prepareUrl()
-
-    def search(indexName: String): SearchDefinition = new SearchDefinition(indexName)
-
-    def index(indexName: String, indexType: String): IndexDefinition = new IndexDefinition(indexName, indexType)
-
-    private def prepareUrl() =
+    private lazy val baseUrl =
     {
-        val withoutAuth =
-            url(uri)
-            .POST
-            .setContentType("application/json", "UTF-8")
+        val withoutAuth = url(uri)
 
         val parsed = Uri.parse(uri)
 
@@ -40,46 +30,63 @@ class Client(uri: String)
         withAuth.getOrElse(withoutAuth)
     }
 
+    private lazy val postUrl = baseUrl.POST.setContentType("application/json", "UTF-8")
+
+
+    def search(indexName: String): SearchDefinition = new SearchDefinition(indexName)
+
+    def index(indexName: String): IndexDefinition = new IndexDefinition(indexName)
+
+
     class SearchDefinition(indexName: String)
     {
         def term[T](termName: String, queryText: String)(implicit m: Manifest[T], f: Formats): Future[List[T]] =
             Http
             {
-                (baseUrl / indexName / "_search")
+                (postUrl / indexName / "_search")
                 .setBody( s"""{"query" : {"term" : { "$termName" : "$queryText" }}}""".getBytes(StandardCharsets.UTF_8))
             }
             .ensureOk
             .map(_.hits[T])
     }
 
-    class IndexDefinition(indexName: String, indexType: String)
+    class IndexDefinition(indexName: String)
     {
-        def create() =
+        def create(): Future[Response] =
         {
             Http
             {
-                baseUrl / indexName
+                postUrl / indexName
             }
             .ensureOk
-            .map(_ => ())
         }
 
-        def doc(id: String, doc: AnyRef)(implicit f: Formats): Future[Unit] =
+        def doc(indexType: String, id: String, doc: AnyRef)(implicit f: Formats): Future[Response] =
+        {
             Http
             {
-                (baseUrl / indexName / indexType / id)
+                (postUrl / indexName / indexType / id)
                 .setBody(doc.toJson)
             }
             .ensureOk
-            .map(_ => ())
-    }
+        }
 
+        def exists: Future[Boolean] =
+        {
+            Http
+            {
+                (baseUrl / indexName )
+                .HEAD
+            }
+            .map(_.getStatusCode == 200)
+        }
+    }
 }
 
 object Client
 {
 
-    implicit class ResponseFutureEx(response: Future[Response])
+    implicit class ResponseFutureEx(response: Future[Response])(implicit ec: ExecutionContext)
     {
         def ensureOk = response.map(_.assertOk())
     }

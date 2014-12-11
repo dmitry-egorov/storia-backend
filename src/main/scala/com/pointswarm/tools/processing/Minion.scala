@@ -6,5 +6,7 @@ abstract class Minion[TCommand]
 {
     def name: String = this.getClass.getSimpleName
 
-    def obey(command: TCommand): Future[AnyRef]
+    def execute(command: TCommand): Future[AnyRef]
+
+    def prepare: Future[Unit]
 }

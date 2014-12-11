@@ -28,7 +28,7 @@ object FutureExtensions
 
     implicit class ListFutureEx[T](futures: List[Future[T]])
     {
-        def all(implicit ec: ExecutionContext) = Future.sequence(futures)
+        def whenAll(implicit ec: ExecutionContext) = Future.sequence(futures)
     }
 
 }
