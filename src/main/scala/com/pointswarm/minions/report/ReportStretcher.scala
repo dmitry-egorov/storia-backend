@@ -1,4 +1,4 @@
-package com.pointswarm.minions.addReport
+package com.pointswarm.minions.report
 
 import com.firebase.client.Firebase
 import com.pointswarm.common._

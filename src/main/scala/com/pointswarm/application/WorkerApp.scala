@@ -5,8 +5,8 @@ import java.util.concurrent.CancellationException
 import com.firebase.client.Firebase
 import com.pointswarm.application.migration.Migrator
 import com.pointswarm.common.CommonFormats
-import com.pointswarm.minions.addEvent.EventStretcher
-import com.pointswarm.minions.addReport.ReportStretcher
+import com.pointswarm.minions.addEvent.{EventViewGenerator, EventStretcher}
+import com.pointswarm.minions.report.ReportStretcher
 import com.pointswarm.minions.search.Searcher
 import com.pointswarm.tools.futuristic.cancellation.CancellationSource
 import com.pointswarm.tools.elastic.Client
@@ -36,6 +36,7 @@ object WorkerApp extends App
             val searcher = new Searcher(fb, elastic)
             val elasticAddEvent = new EventStretcher(fb, elastic)
             val elasticAddReport = new ReportStretcher(fb, elastic)
+            val eventViewGenerator = new EventViewGenerator(fb)
 
             val run =
                 FireMaster
@@ -43,14 +44,11 @@ object WorkerApp extends App
                 .subdue(searcher)
                 .subdue(elasticAddEvent)
                 .subdue(elasticAddReport)
+                .subdue(eventViewGenerator)
                 .run(fb.child("commands"), cancellation)
 
             println("Listening...")
             await(run)
-        }
-        .recover
-        {
-            case ce: CancellationException =>
         }
 
     sys addShutdownHook
@@ -58,7 +56,7 @@ object WorkerApp extends App
         println("Shutting down...")
         cancellation.cancel()
 
-        val total = Await.result(run.recover{ case e => 0 }, 10 seconds)
+        val total = Await.result(run, 10 seconds)
 
         println(s"Finished. Processed $total events")
     }

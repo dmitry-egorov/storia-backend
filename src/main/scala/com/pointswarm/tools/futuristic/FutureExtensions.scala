@@ -6,7 +6,6 @@ import scala.util._
 
 object FutureExtensions
 {
-
     implicit class FutureTryEx[T](future: Future[Try[T]])
     {
         def flatRecoverAsTry(implicit ec: ExecutionContext): Future[Try[T]] = future.recoverAsTry.map(_.flatten)
@@ -25,6 +24,11 @@ object FutureExtensions
             {
                 case cause => new Failure(cause)
             }
+    }
+
+    implicit class ListFutureEx[T](futures: List[Future[T]])
+    {
+        def all(implicit ec: ExecutionContext) = Future.sequence(futures)
     }
 
 }

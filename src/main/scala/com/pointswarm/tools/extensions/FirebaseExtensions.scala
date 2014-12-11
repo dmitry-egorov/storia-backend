@@ -1,5 +1,7 @@
 package com.pointswarm.tools.extensions
 
+import java.util.concurrent.CancellationException
+
 import com.firebase.client.Firebase.CompletionListener
 import com.firebase.client._
 import com.pointswarm.tools.extensions.ObjectExtensions.AnyEx
@@ -41,22 +43,20 @@ object FirebaseExtensions
             p.future
         }
 
-        private def createCompletionListener(p: Promise[Unit]): CompletionListener =
+        def value: Future[DataSnapshot] =
         {
-            new CompletionListener
+            val p = Promise[DataSnapshot]()
+
+            val listener = new ValueEventListener
             {
-                override def onComplete(firebaseError: FirebaseError, firebase: Firebase): Unit =
-                {
-                    if (firebaseError == null)
-                    {
-                        p.success(())
-                    }
-                    else
-                    {
-                        p.failure(firebaseError.toException)
-                    }
-                }
+                override def onDataChange(dataSnapshot: DataSnapshot): Unit = p.success(dataSnapshot)
+
+                override def onCancelled(firebaseError: FirebaseError): Unit = p.failure(new CancellationException())
             }
+
+            ref.addListenerForSingleValueEvent(listener)
+            
+            p.future
         }
 
         def observeAdded: Observable[Added] =
@@ -104,6 +104,24 @@ object FirebaseExtensions
                             ref.removeEventListener(listener)
                         }
                     })
+        }
+
+        private def createCompletionListener(p: Promise[Unit]): CompletionListener =
+        {
+            new CompletionListener
+            {
+                override def onComplete(firebaseError: FirebaseError, firebase: Firebase): Unit =
+                {
+                    if (firebaseError == null)
+                    {
+                        p.success(())
+                    }
+                    else
+                    {
+                        p.failure(firebaseError.toException)
+                    }
+                }
+            }
         }
     }
 

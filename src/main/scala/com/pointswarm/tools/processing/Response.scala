@@ -1,3 +1,3 @@
 package com.pointswarm.tools.processing
 
-case class Response(ok: Boolean, data: AnyRef, error: String)
+case class Response(ok: Boolean, data: Option[AnyRef], error: Option[String])
