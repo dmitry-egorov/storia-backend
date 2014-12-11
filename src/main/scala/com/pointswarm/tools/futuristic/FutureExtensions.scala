@@ -1,10 +1,12 @@
-package com.pointswarm.tools.extensions
+package com.pointswarm.tools.futuristic
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+
+import scala.concurrent._
+import scala.util._
 
 object FutureExtensions
 {
+
     implicit class FutureTryEx[T](future: Future[Try[T]])
     {
         def flatRecoverAsTry(implicit ec: ExecutionContext): Future[Try[T]] = future.recoverAsTry.map(_.flatten)
@@ -12,6 +14,7 @@ object FutureExtensions
 
     implicit class FutureEx[T](future: Future[T])
     {
+
         def recoverAsTry(implicit ec: ExecutionContext): Future[Try[T]] =
             future
             .map
@@ -23,4 +26,7 @@ object FutureExtensions
                 case cause => new Failure(cause)
             }
     }
+
 }
+
+

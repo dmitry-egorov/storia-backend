@@ -1,40 +1,67 @@
 package com.pointswarm.application
 
-import com.firebase.client.Firebase
-import com.pointswarm.tools.elastic.Client
-import com.pointswarm.elasticUpdater.{AddReportElasticUpdater, AddEventElasticUpdater}
-import com.pointswarm.tools.helpers.SystemEx
-import com.pointswarm.application.migration.Migrator
-import com.pointswarm.searcher.Searcher
+import java.util.concurrent.CancellationException
 
+import com.firebase.client.Firebase
+import com.pointswarm.application.migration.Migrator
+import com.pointswarm.common.CommonFormats
+import com.pointswarm.minions.addEvent.EventStretcher
+import com.pointswarm.minions.addReport.ReportStretcher
+import com.pointswarm.minions.search.Searcher
+import com.pointswarm.tools.futuristic.cancellation.CancellationSource
+import com.pointswarm.tools.elastic.Client
+import com.pointswarm.tools.processing.FireMaster
+
+import scala.async.Async._
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 object WorkerApp extends App
 {
-    println(s"Started worker")
+    println("Worker started...")
 
-    var elastic = new Client(WorkerConfig.elasticUrl)
+    val cancellation = new CancellationSource
+    implicit val formats = CommonFormats.formats
 
-    Await.result(Migrator.migrate(elastic), 10 seconds)
+    val run =
+        async
+        {
+            val fb = new Firebase(WorkerConfig.fbUrl)
+            val elastic = new Client(WorkerConfig.elasticUrl)
 
-    var fb = new Firebase(WorkerConfig.fbUrl)
+            await(Migrator.migrate(elastic))
+            println("Migration complete...")
 
-    var searcherSubs = Searcher.run(fb, elastic)
-    var addEventElasticUpdaterSubs = AddEventElasticUpdater.run(fb, elastic)
-    var addReportElasticUpdaterSubs = AddReportElasticUpdater.run(fb, elastic)
+            val searcher = new Searcher(fb, elastic)
+            val elasticAddEvent = new EventStretcher(fb, elastic)
+            val elasticAddReport = new ReportStretcher(fb, elastic)
 
-    SystemEx.waitForShutdown()
+            val run =
+                FireMaster
+                .create()
+                .subdue(searcher)
+                .subdue(elasticAddEvent)
+                .subdue(elasticAddReport)
+                .run(fb.child("commands"), cancellation)
 
-    println("Shutting down...")
+            println("Listening...")
+            await(run)
+        }
+        .recover
+        {
+            case ce: CancellationException =>
+        }
 
-    searcherSubs.unsubscribe()
-    addEventElasticUpdaterSubs.unsubscribe()
-    addReportElasticUpdaterSubs.unsubscribe()
+    sys addShutdownHook
+    {
+        println("Shutting down...")
+        cancellation.cancel()
 
-    println("Shut down.")
+        val total = Await.result(run.recover{ case e => 0 }, 10 seconds)
+
+        println(s"Finished. Processed $total events")
+    }
+
+    Await.result(run, Duration.Inf)
 }
-
-
-
-

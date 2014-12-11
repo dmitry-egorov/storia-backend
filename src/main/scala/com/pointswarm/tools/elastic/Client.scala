@@ -60,7 +60,7 @@ class Client(uri: String)
             {
                 baseUrl / indexName
             }
-            //.ensureOk
+            .ensureOk
             .map(_ => ())
         }
 

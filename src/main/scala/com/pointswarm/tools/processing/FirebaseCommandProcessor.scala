@@ -1,13 +1,13 @@
 package com.pointswarm.tools.processing
 
 import com.firebase.client._
-import com.pointswarm.tools.extensions.Added
+import com.pointswarm.tools.futuristic.cancellation.CancellationToken
+import com.pointswarm.tools.futuristic._
 import com.pointswarm.tools.extensions.FirebaseExtensions._
-import com.pointswarm.tools.extensions.FutureExtensions._
-import com.pointswarm.tools.extensions.ObservableExtensions.ObservableEx
+import FutureExtensions._
+import ObservableExtensions._
 import com.pointswarm.tools.extensions.ThrowableExtensions.ThrowableEx
 import org.json4s.Formats
-import rx.lang.scala.Subscription
 
 import scala.async.Async._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,32 +16,31 @@ import scala.util._
 
 object FirebaseCommandProcessor
 {
-    def run[TCommand <: AnyRef](commandsRef: Firebase, commandName: String, processor: TCommand => Future[Product])(implicit m: Manifest[TCommand], fmt: Formats): Subscription =
+    def run[TCommand <: AnyRef](commandsRef: Firebase, commandName: String, processor: TCommand => Future[AnyRef], token: CancellationToken)(implicit m: Manifest[TCommand], fmt: Formats): Future[Int] =
     {
         new FirebaseCommandProcessor[TCommand](commandsRef, commandName)
-        .run(processor)
+        .run(processor, token)
     }
 }
 
 class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, commandName: String)(implicit m: Manifest[TCommand], f: Formats)
 {
-    private lazy val queueRef = commandsRef.child("queue")
-    private lazy val processedRef = commandsRef.child("processed")
-    private lazy val resultsRef = commandsRef.child("results")
 
-    def run(process: TCommand => Future[Product]): Subscription =
+    private lazy val commandRef = commandsRef.child(commandName)
+    private lazy val queueRef = commandRef.child("queue")
+    private lazy val processedRef = commandRef.child("processed")
+    private lazy val resultsRef = commandRef.child("results")
+
+    def run(process: TCommand => Future[AnyRef], completeWith: CancellationToken): Future[Int] =
     {
         queueRef
-        .observe
-        .collect
-        {
-            case x: Added => x
-        }
-        .futureMap(x => processCommand(process, x.ds))
-        .subscribe()
+        .observeAdded
+        .completeWith(completeWith)
+        .concatMapF(x => processCommand(process, x.ds))
+        .countF()
     }
 
-    private def processCommand(process: TCommand => Future[Product], x: DataSnapshot): Future[Unit] =
+    private def processCommand(process: TCommand => Future[AnyRef], x: DataSnapshot): Future[Unit] =
     {
         val id = new CommandId(x.getKey)
 
@@ -55,13 +54,12 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
         }
     }
 
-
-    private def processCommand(process: TCommand => Future[Product], id: CommandId, command: TCommand): Future[Unit] =
+    private def processCommand(process: TCommand => Future[AnyRef], id: CommandId, command: TCommand): Future[Unit] =
         async
         {
             logCommandReceived(id, command)
 
-            val result = await(process(command).recoverAsTry)
+            val result = await(process(command))
 
             val done =
                 async
@@ -72,7 +70,7 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
 
                     result
                 }
-                .flatRecoverAsTry
+                .recoverAsTry
 
             val complete = await(done)
 
@@ -109,20 +107,9 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
         processedRef.child(commandId.value)
     }
 
-    private def saveResponse(commandId: CommandId, result: Try[Product]): Future[Unit] =
+    private def saveResponse(commandId: CommandId, result: AnyRef): Future[Unit] =
     {
-        val response = responseFrom(result)
-
-        resultRef(commandId) set response
-    }
-
-    private def responseFrom(result: Try[Product]): Response =
-    {
-        result match
-        {
-            case Success(data)  => new Response(true, data, null)
-            case Failure(cause) => new Response(false, Nil, cause.getMessage)
-        }
+        resultRef(commandId) set result
     }
 
     private def resultRef(commandId: CommandId): Firebase =
@@ -130,7 +117,7 @@ class FirebaseCommandProcessor[TCommand <: AnyRef](commandsRef: Firebase, comman
         resultsRef.child(commandId.value)
     }
 
-    private def logProcessed(commandId: CommandId, result: Try[Product])
+    private def logProcessed(commandId: CommandId, result: Try[AnyRef])
     {
         result match
         {

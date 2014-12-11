@@ -1,9 +1,9 @@
 package com.pointswarm.tools.extensions
 
 import com.firebase.client.Firebase.CompletionListener
-import com.firebase.client.{ChildEventListener, DataSnapshot, Firebase, FirebaseError}
+import com.firebase.client._
 import com.pointswarm.tools.extensions.ObjectExtensions.AnyEx
-import com.pointswarm.tools.extensions.SerializationExtensions.{AnyRefEx, StringEx}
+import com.pointswarm.tools.extensions.SerializationExtensions._
 import org.json4s.Formats
 import rx.lang.scala.{Observable, Subscription}
 
@@ -59,6 +59,15 @@ object FirebaseExtensions
             }
         }
 
+        def observeAdded: Observable[Added] =
+        {
+            observe
+            .collect
+            {
+                case x: Added => x
+            }
+        }
+
         def observe: Observable[Event] =
         {
             Observable
@@ -98,10 +107,11 @@ object FirebaseExtensions
         }
     }
 
+
 }
 
 
-abstract class Event
+sealed trait Event
 
 case class Added(ds: DataSnapshot) extends Event
 
