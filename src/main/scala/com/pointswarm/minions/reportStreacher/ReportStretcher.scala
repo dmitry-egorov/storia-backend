@@ -1,17 +1,18 @@
-package com.pointswarm.minions.report
+package com.pointswarm.minions.reportStreacher
 
 import com.firebase.client.Firebase
 import com.pointswarm.application.migration.Migrator
+import com.pointswarm.commands._
 import com.pointswarm.common._
 import com.pointswarm.tools.elastic._
-import com.pointswarm.tools.processing.Minion
+import com.pointswarm.tools.processing._
 import org.json4s.Formats
 
 import scala.concurrent._
 
 class ReportStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[ReportCommand]
 {
-    def execute(command: ReportCommand): Future[SuccessResponse] =
+    def execute(commandId: CommandId, command: ReportCommand): Future[SuccessResponse] =
     {
         val content = command.content
         val eventId = command.eventId
@@ -26,5 +27,5 @@ class ReportStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: Ex
         .map(_ => new SuccessResponse)
     }
 
-    def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
+    override def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
 }

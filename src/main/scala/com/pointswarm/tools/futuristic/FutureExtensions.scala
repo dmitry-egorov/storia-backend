@@ -6,6 +6,7 @@ import scala.util._
 
 object FutureExtensions
 {
+
     implicit class FutureTryEx[T](future: Future[Try[T]])
     {
         def flatRecoverAsTry(implicit ec: ExecutionContext): Future[Try[T]] = future.recoverAsTry.map(_.flatten)
@@ -31,6 +32,14 @@ object FutureExtensions
         def whenAll(implicit ec: ExecutionContext) = Future.sequence(futures)
     }
 
+    implicit class TryEx[T](t: Try[T])
+    {
+        def asFuture: Future[T] = t match
+        {
+            case Success(value) => Future.successful(value)
+            case Failure(cause) => Future.failed(cause)
+        }
+    }
 }
 
 

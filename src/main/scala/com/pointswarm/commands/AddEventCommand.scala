@@ -1,3 +1,3 @@
-package com.pointswarm.minions.addEvent
+package com.pointswarm.commands
 
 case class AddEventCommand(title: String)

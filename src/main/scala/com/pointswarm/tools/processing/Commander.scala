@@ -3,12 +3,12 @@ package com.pointswarm.tools.processing
 import java.lang.System.err
 
 import com.firebase.client._
-import com.pointswarm.tools.extensions.FirebaseExtensions._
 import com.pointswarm.tools.extensions.StringExtensions._
-import com.pointswarm.tools.extensions.ThrowableExtensions.ThrowableEx
+import com.pointswarm.tools.extensions.ThrowableExtensions._
 import com.pointswarm.tools.futuristic.FutureExtensions._
 import com.pointswarm.tools.futuristic.ObservableExtensions._
 import com.pointswarm.tools.futuristic.cancellation.CancellationToken
+import com.pointswarm.tools.hellfire.Extensions._
 import com.pointswarm.tools.processing.interfaces.Conqueror
 import org.json4s.Formats
 
@@ -16,131 +16,111 @@ import scala.async.Async._
 import scala.concurrent._
 import scala.util._
 
-class Commander[TCommand <: AnyRef](commandsRef: Firebase, commandName: String, minions: List[Minion[TCommand]], completeWith: CancellationToken)(implicit m: Manifest[TCommand], f: Formats, ec: ExecutionContext)
+class Commander[TCommand <: AnyRef]
+(fb: Firebase, minion: Minion[TCommand])
+(implicit m: Manifest[TCommand], f: Formats, ec: ExecutionContext)
     extends Conqueror
 {
+    private lazy val commandName = getCommandName
+    private lazy val minionName = getMinionName
 
-    private lazy val commandRef = commandsRef.child(commandName)
-    private lazy val queueRef = commandRef.child("queue")
-    private lazy val processedRef = commandRef.child("processed")
-    private lazy val resultsRef = commandRef.child("results")
+    private lazy val minionRef = fb.child("minions").child(minionName)
+    private lazy val inboxRef = minionRef.child("inbox")
+    private lazy val resultsRef = minionRef.child("results")
 
-    def prepare: Future[Unit] = minions.map(_.prepare).whenAll.map(_ => ())
-
-    def conquer: Future[Int] =
+    def prepare: Future[Unit] =
     {
-        queueRef
-        .observeAdded
-        .completeWith(completeWith)
-        .concatMapF(x => execute(x.ds))
-        .countF()
+        val prepare = minion.prepare
+        val subscribe = subscribeForDistribution
+
+        async
+        {
+            await(prepare)
+            await(subscribe)
+        }
+    }
+
+    def conquer(completeWith: CancellationToken): Future[Int] =
+    {
+        val minionsRun = minion.conquer(completeWith)
+
+        val myRun =
+            inboxRef
+            .observeAdded
+            .completeWith(completeWith)
+            .concatMapF(x => execute(x.ds))
+            .countF
+
+        async
+        {
+            await(minionsRun)
+            await(myRun)
+        }
     }
 
     private def execute(ds: DataSnapshot): Future[Unit] =
-    {
-        val id = new CommandId(ds.getKey)
-
-        Try(ds.value[TCommand]) match
+        async
         {
-            case Success(command) =>
-                logCommandReceived(id, command)
-                orderAll(id, command)
-            case Failure(cause)   =>
-                logFailedToParseCommand(id, cause)
-                Future.successful(())
+            val id = new CommandId(ds.getKey)
+
+            val responseFuture =
+                async
+                {
+                    val command = await(Try(ds.value[TCommand]).asFuture)
+
+                    logCommandReceived(id, command)
+
+                    val responseTry = await(minion.execute(id, command).recoverAsTry)
+
+                    await(saveResponse(id, responseTry))
+                    await(removeCommand(id))
+
+                    responseTry
+                }
+                .flatRecoverAsTry
+
+            val response = await(responseFuture)
+
+            logExecuted(id, response)
         }
+
+
+    private def removeCommand(commandId: CommandId): Future[Unit] =
+    {
+        inboxRef(commandId) remove()
     }
 
-    private def orderAll(id: CommandId, command: TCommand): Future[Unit] =
-        async
-        {
-            val allFuture =
-                minions
-                .map(m => order(m, id, command))
-                .whenAll
-
-            val all = await(allFuture)
-
-            if (all.forall(x => x))
-            {
-                val doneFuture =
-                    async
-                    {
-                        await(saveProcessed(id, command))
-                        await(removeCommand(id))
-                    }
-                    .recoverAsTry
-
-                val done = await(doneFuture)
-
-                logExecuted(id, done)
-            }
-            else
-            {
-                logFailed(id)
-            }
-        }
-
-    private def order(minion: Minion[TCommand], id: CommandId, command: TCommand): Future[Boolean] =
-        async
-        {
-            val result = await(minion.execute(command).recoverAsTry)
-            val name = minion.name.decapitalize
-
-            val response = Response(result)
-
-            val save = saveResponse(name, id, response)
-                       .map(_ => result)
-                       .flatRecoverAsTry
-
-            val endResult = await(save)
-
-            logExecuted(name, id, endResult)
-
-            result.isSuccess
-        }
-
-    private def logFailedToParseCommand(commandId: CommandId, throwable: Throwable) =
+    private def saveResponse(commandId: CommandId, responseTry: Try[AnyRef]): Future[Unit] =
     {
-        err.println(s"Failed to parse command '$commandId': ${throwable.fullMessage }")
+        val result = Result(responseTry)
+
+        resultRef(commandId) set result
+    }
+
+    def subscribeForDistribution: Future[Unit] =
+    {
+        fb
+        .child("minionsMap")
+        .child(minionName)
+        .set(commandName)
+    }
+
+    private def inboxRef(commandId: CommandId): Firebase =
+    {
+        inboxRef.child(commandId)
+    }
+
+    private def resultRef(commandId: CommandId): Firebase =
+    {
+        resultsRef.child(commandId)
     }
 
     private def logCommandReceived(commandId: CommandId, command: TCommand)
     {
-        println(s"Received command: $commandId, $command")
+        println(s"Command recieved by $minionName: $commandId, $command")
     }
 
-    private def removeCommand(commandId: CommandId): Future[Unit] =
-    {
-        queuedRef(commandId) remove()
-    }
-
-    private def queuedRef(commandId: CommandId): Firebase =
-    {
-        queueRef.child(commandId.value)
-    }
-
-    private def saveProcessed(commandId: CommandId, command: TCommand): Future[Unit] =
-    {
-        processedRef(commandId) set command
-    }
-
-    private def processedRef(commandId: CommandId): Firebase =
-    {
-        processedRef.child(commandId.value)
-    }
-
-    private def saveResponse(minionName: String, commandId: CommandId, result: AnyRef): Future[Unit] =
-    {
-        resultRef(minionName, commandId) set result
-    }
-
-    private def resultRef(minionName: String, commandId: CommandId): Firebase =
-    {
-        resultsRef.child(commandId.value).child(minionName)
-    }
-
-    private def logExecuted(minionName: String, commandId: CommandId, result: Try[AnyRef])
+    private def logExecuted(commandId: CommandId, result: Try[AnyRef])
     {
         result match
         {
@@ -151,19 +131,17 @@ class Commander[TCommand <: AnyRef](commandsRef: Firebase, commandName: String, 
         }
     }
 
-    private def logExecuted(commandId: CommandId, result: Try[Unit])
+    private def getCommandName: CommandName =
     {
-        result match
-        {
-            case Success(_)         => println(s"Command $commandName '$commandId' executed.")
-            case Failure(exception) =>
-                val message = exception.fullMessage
-                err.println(s"Command $commandName '$commandId' failed: $message")
-        }
+        m
+        .runtimeClass
+        .getSimpleName
+        .replaceAll("Command", "")
+        .decapitalize
     }
 
-    private def logFailed(commandId: CommandId)
+    def getMinionName: MinionName =
     {
-        err.println(s"Command $commandName '$commandId' failed.")
+        minion.getClass.getSimpleName.decapitalize
     }
 }

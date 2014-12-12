@@ -30,7 +30,7 @@ class ExampleSpec extends FlatSpec with Matchers
                             await(Futuristic.timeout((), 1.2 seconds))
                             println(s"---Processed $i")
                         })
-            .countF()
+            .countF
 
         Thread.sleep((3 seconds).toMillis)
         cancellation.cancel()

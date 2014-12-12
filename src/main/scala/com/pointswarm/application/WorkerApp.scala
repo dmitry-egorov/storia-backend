@@ -2,9 +2,11 @@ package com.pointswarm.application
 
 import com.firebase.client.Firebase
 import com.pointswarm.common.CommonFormats
-import com.pointswarm.minions.addEvent.{EventStretcher, EventViewGenerator}
-import com.pointswarm.minions.report.ReportStretcher
-import com.pointswarm.minions.search.Searcher
+import com.pointswarm.minions.distributor._
+import com.pointswarm.minions.eventViewGenerator.EventViewGenerator
+import com.pointswarm.minions.eventStretcher._
+import com.pointswarm.minions.reportStreacher.ReportStretcher
+import com.pointswarm.minions.searcher.Searcher
 import com.pointswarm.tools.elastic.Client
 import com.pointswarm.tools.futuristic.cancellation.CancellationSource
 import com.pointswarm.tools.processing.Master
@@ -16,7 +18,7 @@ import scala.concurrent.duration._
 
 object WorkerApp extends App
 {
-    println("Worker started...")
+    println("A new Master is born...")
 
     val cancellation = new CancellationSource
     implicit val formats = CommonFormats.formats
@@ -31,8 +33,8 @@ object WorkerApp extends App
             val elasticAddEvent = new EventStretcher(fb, elastic)
             val elasticAddReport = new ReportStretcher(fb, elastic)
             val eventViewGenerator = new EventViewGenerator(fb)
+            val distributor = new Distributor(fb)
 
-            val commandsRef = fb.child("commands")
 
             val army =
                 Master()
@@ -40,20 +42,21 @@ object WorkerApp extends App
                 .recruit(elasticAddEvent)
                 .recruit(elasticAddReport)
                 .recruit(eventViewGenerator)
-                .createArmy(commandsRef, cancellation)
+                .recruit(distributor)
+                .createArmy(fb)
 
-            println("Preparing...")
+            println("Preparing the army...")
 
             await(army.prepare)
 
-            println("Awaiting commands to conquer the world...")
+            println("Ready to conquer the world. Awaiting your commands...")
 
-            await(army.conquer)
+            await(army.conquer(cancellation))
         }
 
     sys addShutdownHook
     {
-        println("Disbanding...")
+        println("Retreating...")
         cancellation.cancel()
 
         val total = Await.result(run, 10 seconds)

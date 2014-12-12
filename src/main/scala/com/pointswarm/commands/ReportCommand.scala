@@ -1,4 +1,4 @@
-package com.pointswarm.minions.report
+package com.pointswarm.commands
 
 import com.pointswarm.common.{EventId, ProfileId}
 

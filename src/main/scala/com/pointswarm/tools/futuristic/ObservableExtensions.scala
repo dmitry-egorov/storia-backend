@@ -52,25 +52,25 @@ object ObservableExtensions
 
         def countF(p: T => Boolean): Future[Int] =
         {
-            obs.count(p).firstF()
+            obs.count(p).firstF
         }
 
-        def countF(): Future[Int] =
+        def countF: Future[Int] =
         {
-            obs.count(_ => true).firstF()
+            obs.count(_ => true).firstF
         }
 
         def lastOrElseF(default: => T): Future[T] =
         {
-            obs.lastOrElse(default).firstF()
+            obs.lastOrElse(default).firstF
         }
 
-        def lastOptionF(): Future[Option[T]] =
+        def lastOptionF: Future[Option[T]] =
         {
-            obs.lastOption.firstF()
+            obs.lastOption.firstF
         }
 
-        def firstF(): Future[T] =
+        def firstF: Future[T] =
         {
             val p = Promise[T]()
 

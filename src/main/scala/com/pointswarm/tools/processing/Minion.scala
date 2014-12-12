@@ -1,12 +1,16 @@
 package com.pointswarm.tools.processing
 
-import scala.concurrent.Future
+import com.pointswarm.tools.futuristic.cancellation.CancellationToken
+import com.pointswarm.tools.processing.interfaces.Conqueror
 
-abstract class Minion[TCommand]
+import scala.concurrent._
+import scala.async.Async._
+
+abstract class Minion[TCommand <: AnyRef](implicit ec: ExecutionContext) extends Conqueror
 {
-    def name: String = this.getClass.getSimpleName
+    def execute(commandId: CommandId, command: TCommand): Future[AnyRef]
 
-    def execute(command: TCommand): Future[AnyRef]
+    def prepare: Future[Unit] = async {}
 
-    def prepare: Future[Unit]
+    def conquer(completeWith: CancellationToken): Future[Int] = completeWith.asFuture.map(_ => 0)
 }

@@ -1,7 +1,6 @@
 package com.pointswarm.tools.processing
 
 import com.firebase.client.Firebase
-import com.pointswarm.tools.futuristic.cancellation.CancellationToken
 import com.pointswarm.tools.processing.interfaces.Summoner
 import org.json4s.Formats
 
@@ -9,28 +8,27 @@ import scala.concurrent._
 
 object Master
 {
-    def apply(): Master = new Master(Map.empty)
+    def apply(): Master = new Master(Nil)
 }
 
-class Master(commanders: Map[Class[_], Summoner])
+class Master(summoners: List[Summoner])
 {
-    def createArmy(commandsRef: Firebase, token: CancellationToken)(implicit ec: ExecutionContext, f: Formats): Army =
+    def createArmy(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): Army =
     {
-        val generals = commanders.values.map(c => c.summonConqueror(commandsRef, token)).toList
+        val commanders =
+            summoners
+            .map(c => c.summonConqueror(fb))
+            .toList
 
-        new Army(generals)
+        new Army(commanders)
     }
 
     def recruit[TCommand <: AnyRef](minion: Minion[TCommand])(implicit m: Manifest[TCommand]): Master =
     {
-        val clazz = m.runtimeClass
+        val recruiter = Recruiter[TCommand](minion)
 
-        val commander = commanders.getOrElse(clazz, Recruiter[TCommand]()).asInstanceOf[Recruiter[TCommand]]
+        val newRecruiters = recruiter :: summoners
 
-        val newCommander = commander.recruit(minion)
-
-        val newCommanders = commanders.updated(clazz, newCommander)
-
-        new Master(newCommanders)
+        new Master(newRecruiters)
     }
 }

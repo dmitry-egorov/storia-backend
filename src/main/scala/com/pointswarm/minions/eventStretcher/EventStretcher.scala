@@ -1,7 +1,8 @@
-package com.pointswarm.minions.addEvent
+package com.pointswarm.minions.eventStretcher
 
 import com.firebase.client.Firebase
 import com.pointswarm.application.migration.Migrator
+import com.pointswarm.commands._
 import com.pointswarm.common._
 import com.pointswarm.tools.elastic._
 import com.pointswarm.tools.extensions.SanitizeExtensions._
@@ -12,7 +13,7 @@ import scala.concurrent._
 
 class EventStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand]
 {
-    def execute(command: AddEventCommand): Future[SuccessResponse] =
+    def execute(commandId: CommandId, command: AddEventCommand): Future[SuccessResponse] =
     {
         val title = command.title
         val id = new EventId(title.sanitize)
@@ -24,7 +25,7 @@ class EventStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: Exe
         .map(_ => new SuccessResponse)
     }
 
-    def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
+    override def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
 }
 
 

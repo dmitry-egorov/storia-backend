@@ -1,9 +1,10 @@
-package com.pointswarm.minions.search
+package com.pointswarm.minions.searcher
 
 import com.firebase.client.Firebase
 import com.pointswarm.application.migration.Migrator
+import com.pointswarm.commands._
 import com.pointswarm.common._
-import com.pointswarm.minions.search.SearcherResponse._
+import com.pointswarm.minions.searcher.SearcherResponse._
 import com.pointswarm.tools.elastic._
 import com.pointswarm.tools.processing._
 import org.json4s.Formats
@@ -13,7 +14,9 @@ import scala.concurrent._
 class Searcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[SearchCommand]
 {
 
-    def execute(command: SearchCommand): Future[SearcherResponse] =
+    override def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
+
+    def execute(commandId: CommandId, command: SearchCommand): Future[SearcherResponse] =
     {
         val queryText = command.query.toLowerCase
 
@@ -30,19 +33,10 @@ class Searcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: Execution
         .distinct
         .toSearchResponse
     }
-
-    override def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
 }
 
-case class SearcherResponse(eventIds: List[EventId])
 
-object SearcherResponse
-{
-    implicit class EventIdsEx(eventIds: List[EventId])
-    {
-        def toSearchResponse = new SearcherResponse(eventIds)
-    }
-}
+
 
 
 

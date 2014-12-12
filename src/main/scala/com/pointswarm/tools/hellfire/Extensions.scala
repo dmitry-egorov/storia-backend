@@ -1,18 +1,18 @@
-package com.pointswarm.tools.extensions
+package com.pointswarm.tools.hellfire
 
 import java.util.concurrent.CancellationException
 
 import com.firebase.client.Firebase.CompletionListener
 import com.firebase.client._
-import com.pointswarm.tools.extensions.ObjectExtensions.AnyEx
+import com.pointswarm.tools.extensions.ObjectExtensions._
 import com.pointswarm.tools.extensions.SerializationExtensions._
+import com.pointswarm.tools.hellfire.events._
 import org.json4s.Formats
-import rx.lang.scala.{Observable, Subscription}
+import rx.lang.scala._
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent._
 
-
-object FirebaseExtensions
+object Extensions
 {
 
     implicit class DataSnapshotEx(ds: DataSnapshot)
@@ -55,7 +55,7 @@ object FirebaseExtensions
             }
 
             ref.addListenerForSingleValueEvent(listener)
-            
+
             p.future
         }
 
@@ -127,14 +127,3 @@ object FirebaseExtensions
 
 
 }
-
-
-sealed trait Event
-
-case class Added(ds: DataSnapshot) extends Event
-
-case class Removed(ds: DataSnapshot) extends Event
-
-case class Changed(ds: DataSnapshot) extends Event
-
-

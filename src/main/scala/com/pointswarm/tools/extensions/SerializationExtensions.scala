@@ -14,5 +14,4 @@ object SerializationExtensions
     {
         def toJson(implicit f: Formats) = Serialization.write(a)
     }
-
 }
