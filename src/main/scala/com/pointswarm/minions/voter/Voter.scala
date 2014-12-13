@@ -13,7 +13,7 @@ class Voter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Min
 {
     def execute(commandId: CommandId, command: UpvoteCommand): Future[AnyRef] =
     {
-        val upvotedRef = getUpvotedRef(command.reportId, command.profileId)
+        val upvotedRef = getUpvotedRef(command.reportId, command.voterId)
         for
         {
             upvoted <- upvotedRef.exists
