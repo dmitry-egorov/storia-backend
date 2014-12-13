@@ -4,6 +4,10 @@ import com.pointswarm.common.dtos._
 import org.joda.time._
 
 case class HistoricalContent(content: HtmlContent, addedOn: DateTime)
+{
+    assert(content != null)
+    assert(addedOn != null)
+}
 
 object HistoricalContent
 {

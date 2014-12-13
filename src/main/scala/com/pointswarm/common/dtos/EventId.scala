@@ -1,7 +1,8 @@
 package com.pointswarm.common.dtos
 
-case class EventId(value: String) extends AnyVal
+case class EventId(value: String)
 {
+    assert(value != null && value.trim.nonEmpty)
     override def toString = value
 }
 

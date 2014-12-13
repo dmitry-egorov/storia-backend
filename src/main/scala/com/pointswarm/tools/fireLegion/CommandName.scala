@@ -2,8 +2,9 @@ package com.pointswarm.tools.fireLegion
 
 import com.pointswarm.tools.extensions.StringExtensions._
 
-case class CommandName(value: String) extends AnyVal
+case class CommandName(value: String)
 {
+    assert(value != null && value.nonEmpty)
     override def toString = value
 }
 

@@ -53,7 +53,7 @@ class Registrator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
 
     def setAccountView(provider: ProviderType, providerData: Map[String, AnyRef], accountId: AccountId, profileId: ProfileId): Future[String] =
     {
-        val accountData = new AccountView(provider, profileId, providerData)
+        val accountData = new AccountView(provider, profileId, Some(providerData))
 
         fb
         .child("accounts")

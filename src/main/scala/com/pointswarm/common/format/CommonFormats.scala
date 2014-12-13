@@ -1,11 +1,9 @@
 package com.pointswarm.common.format
 
-import com.pointswarm.commands.ProviderType._
 import com.pointswarm.common.dtos._
 import com.pointswarm.tools.fireLegion._
 import com.pointswarm.tools.serialization.SingleStringCaseClassSerializer._
 import com.pointswarm.tools.serialization._
-import org.json4s.JsonAST._
 import org.json4s._
 import org.json4s.jackson.Serialization
 

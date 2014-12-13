@@ -2,6 +2,7 @@ package com.pointswarm.common.dtos
 
 case class HtmlContent(value: String)
 {
+    assert(value != null && value.trim.nonEmpty)
     override def toString = value
 }
 

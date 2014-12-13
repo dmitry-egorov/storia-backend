@@ -1,7 +1,8 @@
 package com.pointswarm.tools.fireLegion
 
-case class CommandId(value: String) extends AnyVal
+case class CommandId(value: String)
 {
+    assert(value != null && value.nonEmpty)
     override def toString = value
 }
 

@@ -11,3 +11,10 @@ case class ReportView
     eventId: EventId,
     upvotedBy: Set[ProfileId]
     )
+{
+    assert(content != null)
+    assert(addedOn != null)
+    assert(authorId != null)
+    assert(eventId != null)
+    assert(upvotedBy != null)
+}

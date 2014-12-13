@@ -1,7 +1,8 @@
 package com.pointswarm.common.dtos
 
-case class AccountId(value: String) extends AnyVal
+case class AccountId(value: String)
 {
+    assert(value != null && value.trim.nonEmpty)
     override def toString = value
 }
 
