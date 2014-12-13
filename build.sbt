@@ -6,7 +6,7 @@ version := "1.0"
 
 scalaVersion := "2.11.4"
 
-scalacOptions ++= Seq("-feature", "-deprecation", "-language:postfixOps")
+scalacOptions ++= Seq("-feature", "-deprecation", "-language:postfixOps", "-language:implicitConversions")
 
 libraryDependencies ++= Seq(
   "com.firebase" % "firebase-client-jvm" % "2.0.2",

@@ -33,7 +33,7 @@ object Extensions
     {
         def newKey: String = ref.push().getKey
 
-        def remove(): Future[String] =
+        def remove: Future[String] =
         {
             val p = Promise[String]()
             ref.removeValue(createCompletionListener(p))

@@ -71,7 +71,7 @@ class Commander[TCommand <: AnyRef]
 
     private def removeCommand(commandId: CommandId): Future[String] =
     {
-        inboxRef(commandId) remove()
+        inboxRef(commandId) remove
     }
 
     private def saveResponse(commandId: CommandId, responseTry: Try[AnyRef]): Future[String] =

@@ -1,8 +1,7 @@
-package com.pointswarm.application
+package com.pointswarm.tools.fireLegion
 
-import com.pointswarm.tools.futuristic.cancellation._
-import com.pointswarm.tools.fireLegion._
 import com.pointswarm.tools.fireLegion.interfaces._
+import com.pointswarm.tools.futuristic.cancellation._
 
 import scala.concurrent._
 import scala.util._
