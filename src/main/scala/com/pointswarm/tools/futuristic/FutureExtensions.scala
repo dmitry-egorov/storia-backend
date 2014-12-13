@@ -7,8 +7,6 @@ import scala.util._
 
 object FutureExtensions
 {
-    private lazy val timer = new java.util.Timer()
-
     implicit class FutureTryEx[T](val future: Future[Try[T]]) extends AnyVal
     {
         def flatRecoverAsTry(implicit ec: ExecutionContext): Future[Try[T]] = future.recoverAsTry.map(_.flatten)

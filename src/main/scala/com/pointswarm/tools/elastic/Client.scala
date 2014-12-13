@@ -3,7 +3,7 @@ package com.pointswarm.tools.elastic
 import java.nio.charset.StandardCharsets
 
 import com.netaporter.uri.Uri
-import com.ning.http.client.Response
+import com.ning.http.client._
 import com.pointswarm.tools.elastic.Client._
 import com.pointswarm.tools.extensions.SerializationExtensions._
 import dispatch.{Http, url}
@@ -83,15 +83,17 @@ class Client(uri: String)(implicit ec: ExecutionContext)
     }
 }
 
+
 object Client
 {
+    import com.pointswarm.tools.extensions.HttpExtensions._
 
     implicit class ResponseFutureEx(val response: Future[Response]) extends AnyVal
     {
-        def ensureOk(implicit ec: ExecutionContext) = response.map(_.assertOk())
+        def ensureOk(implicit ec: ExecutionContext) = response.map(x => x.assertOk)
     }
 
-    implicit class ResponseEx(val response: Response) extends AnyVal
+    implicit class ClientResponseEx(val response: Response) extends AnyVal
     {
         def hits[T](implicit m: Manifest[T], f: Formats): List[T] =
         {
@@ -103,19 +105,7 @@ object Client
             .map(_._source)
         }
 
-        def assertOk() =
-            if (200 until 299 contains response.getStatusCode)
-            {
-                response
-            }
-            else
-            {
-                val code = response.getStatusCode
-                val text = response.getStatusText
-                val body = response.getResponseBody
 
-                throw new RuntimeException(s"$code ($text): $body")
-            }
     }
 
     private case class ElasticResponse[T](hits: HitsList[T])

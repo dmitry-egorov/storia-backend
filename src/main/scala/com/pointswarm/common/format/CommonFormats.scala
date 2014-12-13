@@ -1,10 +1,12 @@
 package com.pointswarm.common.format
 
+import com.pointswarm.commands.ProviderType._
 import com.pointswarm.common.dtos._
 import com.pointswarm.tools.fireLegion._
 import com.pointswarm.tools.serialization.SingleStringCaseClassSerializer._
 import com.pointswarm.tools.serialization._
-import org.json4s.NoTypeHints
+import org.json4s.JsonAST._
+import org.json4s._
 import org.json4s.jackson.Serialization
 
 object CommonFormats
@@ -17,5 +19,11 @@ object CommonFormats
                            SingleStringCaseClassSerializer[MinionName](x => new MinionName(x)) +
                            SingleStringCaseClassSerializer[HistoryId](x => new HistoryId(x)) +
                            SingleStringCaseClassSerializer[HtmlContent](x => new HtmlContent(x)) +
-                           new DateTimeSerializer
+                           new DateTimeSerializer +
+                           new ProviderTypeSerializer
+
 }
+
+
+
+

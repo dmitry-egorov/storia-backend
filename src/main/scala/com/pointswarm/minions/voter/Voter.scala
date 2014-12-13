@@ -35,11 +35,3 @@ class Voter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Min
         .child(profileId)
     }
 }
-
-
-
-
-
-
-
-

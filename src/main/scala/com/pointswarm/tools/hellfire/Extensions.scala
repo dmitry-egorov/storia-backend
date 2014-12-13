@@ -14,15 +14,8 @@ import scala.concurrent._
 object Extensions
 {
 
-    case class FireResult[TValue](key: String, value: TValue)
-
     implicit class DataSnapshotEx(val ds: DataSnapshot) extends AnyVal
     {
-        def result[T](implicit m: Manifest[T], f: Formats): Option[FireResult[T]] =
-        {
-            value[T].map(v => new FireResult(ds.getKey, v))
-        }
-
         def value[T](implicit m: Manifest[T], f: Formats): Option[T] =
         {
             Option(ds.getValue).map(x => x.toScala.toJson.readAs[T])
@@ -63,11 +56,6 @@ object Extensions
             p.future
         }
 
-        def result[T](implicit m: Manifest[T], f: Formats, ec: ExecutionContext): Future[Option[FireResult[T]]] =
-        {
-            current.map(x => x.result[T])
-        }
-
         def value[T](implicit m: Manifest[T], f: Formats, ec: ExecutionContext): Future[Option[T]] =
         {
             current.map(x => x.value[T])
@@ -87,12 +75,9 @@ object Extensions
             ref.addValueEventListener(listener)
 
             p.future.andThen
-            { case _ => ref.removeEventListener(listener) }
-        }
-
-        def awaitResult[T](implicit m: Manifest[T], f: Formats, ec: ExecutionContext): Future[FireResult[T]] =
-        {
-            await.map(x => x.result[T].get)
+            {
+                case _ => ref.removeEventListener(listener)
+            }
         }
 
         def awaitValue[T](implicit m: Manifest[T], f: Formats, ec: ExecutionContext): Future[T] =

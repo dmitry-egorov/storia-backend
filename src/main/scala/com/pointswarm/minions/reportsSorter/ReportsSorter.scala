@@ -44,16 +44,19 @@ class ReportsSorter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) ext
 
     def getReports(reportIds: List[ReportId]): Future[List[(ReportId, ReportView)]] =
     {
-        val reportsRef = fb.child("reports")
-
         reportIds
-        .map(id =>
-                 reportsRef
-                 .child(id)
-                 .awaitValue[ReportView]
-                 .map(r => (id, r))
-                 .timeout(5 seconds))
+        .map(id => getReport(id))
         .whenAll
+    }
+
+    def getReport(id: ReportId): Future[(ReportId, ReportView)] =
+    {
+        fb
+        .child("reports")
+        .child(id)
+        .awaitValue[ReportView]
+        .timeout(5 seconds)
+        .map(r => (id, r))
     }
 
     def getReportIdsOf(eventId: EventId): Future[List[ReportId]] =
@@ -61,8 +64,8 @@ class ReportsSorter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) ext
         getEventRef(eventId)
         .child("reports")
         .awaitValue[Map[ReportId, Boolean]]
-        .map(m => m.keys.toList)
         .timeout(5 seconds)
+        .map(m => m.keys.toList)
     }
 
     def getEventRef(eventId: EventId): Firebase =
