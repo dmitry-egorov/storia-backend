@@ -1,6 +1,7 @@
 package com.pointswarm.minions.registrator
 
 import com.firebase.client._
+import com.ning.http.client.Response
 import com.pointswarm.commands.ProviderType._
 import com.pointswarm.commands._
 import com.pointswarm.common.dtos._
@@ -10,7 +11,10 @@ import com.pointswarm.tools.fireLegion._
 import com.pointswarm.tools.hellfire.Extensions._
 import com.pointswarm.tools.futuristic.FutureExtensions._
 import dispatch._
+
 import org.json4s._
+import org.json4s.DynamicJValue._
+import org.json4s.jackson.JsonMethods._
 
 import scala.concurrent.{Future, _}
 
@@ -27,7 +31,7 @@ class Registrator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
         val providerUid = command.providerUid
 
         assertAccountExists(accountId)
-        .flatMap(_ => getProfilePicture(provider, providerUid))
+        .flatMap(_ => getProfileImageUrl(provider, providerUid))
         .flatMap(imageUrl => setViews(accountId, name, provider, providerData, imageUrl))
         .map(_ => SuccessResponse)
     }
@@ -38,7 +42,7 @@ class Registrator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
         .child("accounts")
         .child(accountId)
         .exists
-        .map(exists => if (exists) throw new AccountAlreadyExists(accountId))
+        .map(exists => if (exists) throw new AccountAlreadyExistsException(accountId))
     }
 
     def setViews(accountId: AccountId, name: String, provider: ProviderType, providerData: Map[String, AnyRef], imageUrl: String): Future[Unit] =
@@ -71,28 +75,45 @@ class Registrator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
         .set(profileData)
     }
 
-    private def getProfilePicture(provider: ProviderType, userId: String): Future[String] =
+    private def getProfileImageUrl(provider: ProviderType, userId: String): Future[String] =
     {
-        import org.json4s.DynamicJValue._
-        import org.json4s.jackson.JsonMethods._
+        provider match
+        {
+            case Facebook => getFacebookImageUrl(userId)
+            case Google => getGoogleImageUrl(userId)
+            case _ => Future.successful(defaultImageUrl)
+        }
+    }
 
-        if (provider == Facebook)
+    def getFacebookImageUrl(userId: String): Future[String] =
+    {
+        Future.successful(s"http://graph.facebook.com/$userId/picture?type=square")
+    }
+
+    def getGoogleImageUrl(userId: String): Future[String] =
+    {
+        Http(url(s"http://picasaweb.google.com/data/entry/api/user/$userId?alt=json"))
+        .map(data => getUrlFromGoogleResponse(data))
+        .recover
         {
-            Future.successful(s"http://graph.facebook.com/$userId/picture?type=square")
+            case _ => defaultImageUrl
         }
-        else if (provider == Google)
+    }
+
+    def getUrlFromGoogleResponse(data: Response): String =
+    {
+        val jvalue = dyn(parse(data.getResponseBody)).entry.gphoto$thumbnail.$t.raw
+
+        jvalue match
         {
-            Http(url(s"http://picasaweb.google.com/data/entry/api/user/$userId?alt=json"))
-            .map(data => dyn(parse(data.getResponseBody)).entry.gphoto$thumbnail.$t.toString)
-            .recover
-            {
-                case _ => "http://pointswarm.com/img/anonymous.png"
-            }
+            case JString(value) => value
+            case _ => defaultImageUrl
         }
-        else
-        {
-            Future.successful("http://pointswarm.com/img/anonymous.png")
-        }
+    }
+
+    def defaultImageUrl: String =
+    {
+        "http://pointswarm.com/img/anonymous.png"
     }
 }
 

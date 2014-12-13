@@ -17,6 +17,7 @@ object CommonFormats
                            SingleStringCaseClassSerializer[MinionName](x => new MinionName(x)) +
                            SingleStringCaseClassSerializer[HistoryId](x => new HistoryId(x)) +
                            SingleStringCaseClassSerializer[HtmlContent](x => new HtmlContent(x)) +
+                           SingleStringCaseClassSerializer[AccountId](x => new AccountId(x)) +
                            new DateTimeSerializer +
                            new ProviderTypeSerializer
 
