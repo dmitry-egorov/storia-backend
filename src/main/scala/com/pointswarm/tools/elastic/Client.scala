@@ -86,12 +86,12 @@ class Client(uri: String)(implicit ec: ExecutionContext)
 object Client
 {
 
-    implicit class ResponseFutureEx(response: Future[Response])(implicit ec: ExecutionContext)
+    implicit class ResponseFutureEx(val response: Future[Response]) extends AnyVal
     {
-        def ensureOk = response.map(_.assertOk())
+        def ensureOk(implicit ec: ExecutionContext) = response.map(_.assertOk())
     }
 
-    implicit class ResponseEx(response: Response)
+    implicit class ResponseEx(val response: Response) extends AnyVal
     {
         def hits[T](implicit m: Manifest[T], f: Formats): List[T] =
         {

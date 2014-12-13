@@ -2,7 +2,7 @@ package com.pointswarm.tools.extensions
 
 object SanitizeExtensions
 {
-    implicit class StringSanitizer(str: String)
+    implicit class StringSanitizer(val str: String) extends AnyVal
     {
         def sanitize =
             str

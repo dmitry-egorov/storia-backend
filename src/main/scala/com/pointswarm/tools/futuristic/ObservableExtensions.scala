@@ -8,9 +8,9 @@ import scala.concurrent._
 object ObservableExtensions
 {
 
-    implicit class ObservableEx[T](obs: Observable[T])(implicit ec: ExecutionContext)
+    implicit class ObservableEx[T](val obs: Observable[T]) extends AnyVal
     {
-        def completeWith(token: CancellationToken) =
+        def completeWith(token: CancellationToken)(implicit ec: ExecutionContext) =
         {
             Observable.create[T](
                 observer =>
@@ -28,7 +28,7 @@ object ObservableExtensions
                 })
         }
 
-        def cancelWith(token: CancellationToken) =
+        def cancelWith(token: CancellationToken)(implicit ec: ExecutionContext) =
         {
             Observable.create[T](
                 observer =>
@@ -46,31 +46,31 @@ object ObservableExtensions
                 })
         }
 
-        def flatMapF[U](f: T => Future[U]) = obs.flatMap(x => Observable.from(f(x)))
+        def flatMapF[U](f: T => Future[U])(implicit ec: ExecutionContext) = obs.flatMap(x => Observable.from(f(x)))
 
-        def concatMapF[U](f: T => Future[U]) = obs.concatMap(x => Observable.from(f(x)))
+        def concatMapF[U](f: T => Future[U])(implicit ec: ExecutionContext) = obs.concatMap(x => Observable.from(f(x)))
 
-        def countF(p: T => Boolean): Future[Int] =
+        def countF(p: T => Boolean)(implicit ec: ExecutionContext): Future[Int] =
         {
             obs.count(p).firstF
         }
 
-        def countF: Future[Int] =
+        def countF(implicit ec: ExecutionContext): Future[Int] =
         {
             obs.count(_ => true).firstF
         }
 
-        def lastOrElseF(default: => T): Future[T] =
+        def lastOrElseF(default: => T)(implicit ec: ExecutionContext): Future[T] =
         {
             obs.lastOrElse(default).firstF
         }
 
-        def lastOptionF: Future[Option[T]] =
+        def lastOptionF(implicit ec: ExecutionContext): Future[Option[T]] =
         {
             obs.lastOption.firstF
         }
 
-        def firstF: Future[T] =
+        def firstF(implicit ec: ExecutionContext): Future[T] =
         {
             val p = Promise[T]()
 

@@ -4,7 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 object ThrowableExtensions
 {
-    implicit class ThrowableEx(t: Throwable)
+    implicit class ThrowableEx(val t: Throwable) extends AnyVal
     {
         def fullMessage: String =
         {

@@ -1,6 +1,6 @@
 package com.pointswarm.tools.futuristic.cancellation
 
-class NoneCancellationToken extends CancellationToken
+object NoneCancellationToken extends CancellationToken
 {
     def whenCancelled(act: () => Unit): Unit = {}
 

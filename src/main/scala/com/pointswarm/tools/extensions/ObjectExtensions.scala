@@ -5,7 +5,7 @@ import scala.collection.JavaConversions._
 object ObjectExtensions
 {
 
-    implicit class AnyEx(cc: Any)
+    implicit class AnyEx(val cc: Any) extends AnyVal
     {
         def toJava: AnyRef =
         {

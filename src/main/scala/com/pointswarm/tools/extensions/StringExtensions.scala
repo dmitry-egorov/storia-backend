@@ -4,7 +4,7 @@ import java.beans.Introspector
 
 object StringExtensions
 {
-    implicit class StringEx(s: String)
+    implicit class StringEx(val s: String) extends AnyVal
     {
         def decapitalize =
         {

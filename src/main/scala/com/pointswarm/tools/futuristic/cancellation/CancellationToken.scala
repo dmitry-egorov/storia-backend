@@ -1,10 +1,10 @@
 package com.pointswarm.tools.futuristic.cancellation
 
-import scala.concurrent.{Promise, Future}
+import scala.concurrent._
 
 object CancellationToken
 {
-    def none: CancellationToken = new NoneCancellationToken
+    def none: CancellationToken = NoneCancellationToken
 }
 
 trait CancellationToken

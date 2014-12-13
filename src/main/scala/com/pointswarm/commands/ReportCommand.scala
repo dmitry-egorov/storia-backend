@@ -1,5 +1,6 @@
 package com.pointswarm.commands
 
-import com.pointswarm.common.{EventId, ProfileId}
+import com.pointswarm.common.dtos._
+import org.joda.time._
 
-case class ReportCommand(eventId: EventId, authorId: ProfileId, content: String)
+case class ReportCommand(authorId: ProfileId, eventId: EventId, content: HtmlContent, addedOn: DateTime)

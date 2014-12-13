@@ -5,13 +5,19 @@ import org.json4s.jackson.Serialization
 
 object SerializationExtensions
 {
-    implicit class StringEx(s: String)
+    implicit class StringEx(val s: String) extends AnyVal
     {
-        def readAs[T](implicit m: Manifest[T], f: Formats) = Serialization.read[T](s)
+        def readAs[T](implicit m: Manifest[T], f: Formats) =
+        {
+            Serialization.read[T](s)
+        }
     }
 
-    implicit class AnyRefEx(a: AnyRef)
+    implicit class AnyRefEx(val a: AnyRef) extends AnyVal
     {
-        def toJson(implicit f: Formats) = Serialization.write(a)
+        def toJson(implicit f: Formats) =
+        {
+            Serialization.write(a)
+        }
     }
 }

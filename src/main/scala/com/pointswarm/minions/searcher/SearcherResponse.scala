@@ -1,13 +1,15 @@
 package com.pointswarm.minions.searcher
 
-import com.pointswarm.common._
+import com.pointswarm.common.dtos._
 
 case class SearcherResponse(eventIds: List[EventId])
 
 object SearcherResponse
 {
-    implicit class EventIdsEx(eventIds: List[EventId])
+
+    implicit class EventIdsEx(val eventIds: List[EventId]) extends AnyVal
     {
         def toSearchResponse = new SearcherResponse(eventIds)
     }
+
 }

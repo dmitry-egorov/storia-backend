@@ -6,7 +6,6 @@ import com.pointswarm.tools.futuristic.cancellation.CancellationSource
 import org.scalatest._
 import rx.lang.scala.Observable
 
-import scala.async.Async._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -24,11 +23,10 @@ class ExampleSpec extends FlatSpec with Matchers
             .completeWith(cancellation)
             .concatMapF(
                     i =>
-                        async
                         {
                             println(s"Received $i")
-                            await(Futuristic.timeout((), 1.2 seconds))
-                            println(s"---Processed $i")
+                            Futuristic.timeout((), 1.2 seconds)
+                            .map(_ => println(s"---Processed $i"))
                         })
             .countF
 
