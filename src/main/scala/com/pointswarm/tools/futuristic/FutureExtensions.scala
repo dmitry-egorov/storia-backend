@@ -18,11 +18,11 @@ object FutureExtensions
             future
             .map
             {
-                case response => new Success(response)
+                case response => Success(response)
             }
             .recover
             {
-                case cause => new Failure(cause)
+                case cause => Failure(cause)
             }
 
 

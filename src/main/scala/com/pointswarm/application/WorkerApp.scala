@@ -4,6 +4,7 @@ import com.firebase.client.Firebase
 import com.pointswarm.common.format._
 import com.pointswarm.minions.eventStretcher._
 import com.pointswarm.minions.eventViewGenerator.EventViewGenerator
+import com.pointswarm.minions.paparazzi.Paparazzi
 import com.pointswarm.minions.registrator.Registrator
 import com.pointswarm.minions.reportStreacher.ReportStretcher
 import com.pointswarm.minions.reportViewGenerator._
@@ -38,6 +39,7 @@ object WorkerApp extends App
     val reportsSorter = new ReportsSorter(fb)
     val voter = new Voter(fb)
     val registrator = new Registrator(fb)
+    val paparazzi = new Paparazzi(fb)
 
     val army =
         Master(fb)
@@ -50,6 +52,7 @@ object WorkerApp extends App
         .recruit(reportsSorter)
         .recruit(voter)
         .recruit(registrator)
+        .recruit(paparazzi)
         .createArmy.withAnnouncer
 
     val conquest =

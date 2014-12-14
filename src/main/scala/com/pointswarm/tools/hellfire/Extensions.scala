@@ -6,10 +6,12 @@ import com.firebase.client.Firebase.CompletionListener
 import com.firebase.client._
 import com.pointswarm.tools.extensions.ObjectExtensions._
 import com.pointswarm.tools.extensions.SerializationExtensions._
+import com.pointswarm.tools.futuristic.FutureExtensions._
 import org.json4s.Formats
 import rx.lang.scala._
 
 import scala.concurrent._
+import scala.concurrent.duration.Duration
 
 object Extensions
 {
@@ -24,6 +26,8 @@ object Extensions
 
     implicit class FirebaseEx(val ref: Firebase) extends AnyVal
     {
+        def /(path: String) = ref.child(path)
+
         def newKey: String = ref.push().getKey
 
         def remove: Future[String] =
@@ -33,7 +37,19 @@ object Extensions
             p.future
         }
 
+        def <--(value: Boolean)(implicit f: Formats): Future[String] = set(value)
+        def <--(value: String)(implicit f: Formats): Future[String] = set(value)
+        def <--(value: AnyRef)(implicit f: Formats): Future[String] = set(value)
+        def <%-(value: Boolean)(implicit f: Formats): Future[String] = push(value)
+        def <%-(value: String)(implicit f: Formats): Future[String] = push(value)
+        def <%-(value: AnyRef)(implicit f: Formats): Future[String] = push(value)
+
+        def push(value: Boolean)(implicit f: Formats): Future[String] = ref.push.set(value)
+        def push(value: String)(implicit f: Formats): Future[String] = ref.push.set(value)
         def push(value: AnyRef)(implicit f: Formats): Future[String] = ref.push.set(value)
+
+        def set(value: Boolean)(implicit f: Formats): Future[String] = set(value : java.lang.Boolean)
+        def set(value: String)(implicit f: Formats): Future[String] = set(value: AnyRef)
 
         def set(value: AnyRef)(implicit f: Formats): Future[String] =
         {
@@ -61,12 +77,14 @@ object Extensions
             current.map(x => x.value[T])
         }
 
+        def whenExists(f: () => Unit)(implicit ec: ExecutionContext): Future[Unit] = exists.map(exists => if (exists) f())
+
         def exists(implicit ec: ExecutionContext): Future[Boolean] =
         {
             current.map(x => x.exists())
         }
 
-        def await(implicit ec: ExecutionContext): Future[DataSnapshot] =
+        def await(timeout: Duration = Duration.Inf)(implicit ec: ExecutionContext): Future[DataSnapshot] =
         {
             val p = Promise[DataSnapshot]()
 
@@ -74,15 +92,15 @@ object Extensions
 
             ref.addValueEventListener(listener)
 
-            p.future.andThen
+            p.future.timeout(timeout).andThen
             {
                 case _ => ref.removeEventListener(listener)
             }
         }
 
-        def awaitValue[T](implicit m: Manifest[T], f: Formats, ec: ExecutionContext): Future[T] =
+        def awaitValue[T](timeout: Duration = Duration.Inf)(implicit m: Manifest[T], f: Formats, ec: ExecutionContext): Future[T] =
         {
-            await.map(x => x.value[T].get)
+            await(timeout).map(x => x.value[T].get)
         }
 
         def observeAdded: Observable[Added] =

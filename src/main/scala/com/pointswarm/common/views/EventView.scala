@@ -3,15 +3,15 @@ package com.pointswarm.common.views
 import com.pointswarm.common.dtos._
 import org.joda.time._
 
-case class EventView(title: String, addedOn: DateTime, previewId: Option[ReportId], reports: Set[ReportId])
+case class EventView(title: Name, addedOn: DateTime, previewId: Option[ReportId], reports: Option[Map[ReportId, Boolean]])
 {
-    assert(title != null && title.trim.nonEmpty)
+    assert(title != null)
 }
 
 object EventView
 {
-    def from(title: String): EventView =
+    def apply(title: Name): EventView =
     {
-        new EventView(title, DateTime.now(DateTimeZone.UTC), None, Set.empty)
+        EventView(title, DateTime.now(DateTimeZone.UTC), None, None)
     }
 }

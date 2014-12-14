@@ -9,7 +9,7 @@ import scala.concurrent._
 
 object Master
 {
-    def apply(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): Master = new Master(fb, Nil)
+    def apply(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): Master = Master(fb, Nil)
 }
 
 case class Master(fb: Firebase, summoners: List[Summoner])(implicit ec: ExecutionContext, f: Formats)
@@ -23,7 +23,7 @@ case class Master(fb: Firebase, summoners: List[Summoner])(implicit ec: Executio
             .map(c => c.summonConqueror(fb))
             .toList
 
-        new Army(commanders)
+        Army(commanders)
     }
 
     def recruit[TCommand <: AnyRef](minion: Minion[TCommand])(implicit m: Manifest[TCommand]): Master =

@@ -22,9 +22,8 @@ class Searcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: Execution
     {
         val queryText = command.query.toLowerCase
 
-        elastic
-        .search("texts")
-        .term[TextIndexEntryView]("text", queryText)
+        (elastic search "texts")
+        .`match`[TextIndexEntryView]("text", queryText)
         .map(toResponse)
     }
 

@@ -10,7 +10,7 @@ case class CommandName(value: String)
 
 object CommandName
 {
-    def of[TCommand](implicit m: Manifest[TCommand]): CommandName =
+    def apply[TCommand](implicit m: Manifest[TCommand]): CommandName =
     {
         m
         .runtimeClass
@@ -19,6 +19,6 @@ object CommandName
         .decapitalize
     }
 
-    implicit def fromString(s: String): CommandName = new CommandName(s)
+    implicit def fromString(s: String): CommandName = CommandName(s)
     implicit def toString(cn: CommandName): String = cn.value
 }

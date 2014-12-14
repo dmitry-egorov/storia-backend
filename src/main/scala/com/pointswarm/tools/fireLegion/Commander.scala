@@ -3,7 +3,6 @@ package com.pointswarm.tools.fireLegion
 import java.lang.System.err
 
 import com.firebase.client._
-import com.pointswarm.tools.extensions.StringExtensions._
 import com.pointswarm.tools.extensions.ThrowableExtensions._
 import com.pointswarm.tools.fireLegion.interfaces.Conqueror
 import com.pointswarm.tools.futuristic.FutureExtensions._
@@ -16,16 +15,17 @@ import scala.concurrent._
 import scala.util._
 
 class Commander[TCommand <: AnyRef]
-(fb: Firebase, minion: Minion[TCommand])
+(root: Firebase, minion: Minion[TCommand])
 (implicit m: Manifest[TCommand], f: Formats, ec: ExecutionContext)
     extends Conqueror
 {
-    private lazy val commandName = CommandName.of[TCommand]
-    private lazy val minionName = getMinionName
+    private lazy val commandName = CommandName[TCommand]
+    private lazy val minionName = MinionName(minion)
 
-    private lazy val minionRef = fb.child("minions").child(minionName)
-    private lazy val inboxRef = minionRef.child("inbox")
-    private lazy val resultsRef = minionRef.child("results")
+    private lazy val minionRoot = root / "minions" / minionName
+    private lazy val inboxRoot = minionRoot / "inbox"
+    private lazy val resultsRoot = minionRoot / "results"
+    private lazy val minionMapKeyRoot = root / "minionsMap" / minionName
 
     def prepare: Future[Unit] =
     {
@@ -40,7 +40,7 @@ class Commander[TCommand <: AnyRef]
         val minionsRun = minion.conquer(completeWith)
 
         val myRun =
-            inboxRef
+            inboxRoot
             .observeAdded
             .completeWith(completeWith)
             .concatMapF(x => execute(x.ds))
@@ -51,17 +51,20 @@ class Commander[TCommand <: AnyRef]
 
     private def execute(ds: DataSnapshot): Future[Unit] =
     {
-        val id = new CommandId(ds.getKey)
+        val id = CommandId(ds.getKey)
         val commandTry = Try(ds.value[TCommand].get)
 
         val responseFuture =
-        for
-        {
-            command <- commandTry.asFuture
-            responseTry <- minion.execute(id, command).recoverAsTry
-            _ <- saveResponse(id, responseTry)
-            _ <- removeCommand(id)
-        } yield responseTry
+            for
+            {
+                c <- commandTry.asFuture
+                _ = logCommandReceived(id, c)
+
+                r <- minion.execute(id, c).recoverAsTry
+
+                _ <- saveResult(id, c, r)
+                _ <- removeCommand(id)
+            } yield r
 
         responseFuture
         .flatRecoverAsTry
@@ -70,34 +73,13 @@ class Commander[TCommand <: AnyRef]
 
 
     private def removeCommand(commandId: CommandId): Future[String] =
-    {
-        inboxRef(commandId) remove
-    }
+        inboxRoot / commandId remove
 
-    private def saveResponse(commandId: CommandId, responseTry: Try[AnyRef]): Future[String] =
-    {
-        val result = CommandResult(responseTry)
+    private def saveResult(commandId: CommandId, command: TCommand, responseTry: Try[AnyRef]): Future[String] =
+        resultsRoot / commandId <-- CommandResult(responseTry, command)
 
-        resultRef(commandId) set result
-    }
-
-    def subscribeForDistribution: Future[String] =
-    {
-        fb
-        .child("minionsMap")
-        .child(minionName)
-        .set(commandName.value)
-    }
-
-    private def inboxRef(commandId: CommandId): Firebase =
-    {
-        inboxRef.child(commandId)
-    }
-
-    private def resultRef(commandId: CommandId): Firebase =
-    {
-        resultsRef.child(commandId)
-    }
+    private def subscribeForDistribution: Future[String] =
+        minionMapKeyRoot <-- commandName
 
     private def logCommandReceived(commandId: CommandId, command: TCommand)
     {
@@ -108,16 +90,10 @@ class Commander[TCommand <: AnyRef]
     {
         result match
         {
-            case Success(response)  => println(s"Command $commandName '$commandId' executed by $minionName: $response")
+            case Success(response)  =>
+                println(s"Command $commandName '$commandId' executed by $minionName: $response")
             case Failure(exception) =>
-                val message = exception.fullMessage
-                err.println(s"Command $commandName '$commandId' failed by $minionName: $message")
+                err.println(s"Command $commandName '$commandId' failed by $minionName: ${exception.fullMessage }")
         }
-    }
-
-
-    def getMinionName: MinionName =
-    {
-        minion.getClass.getSimpleName.decapitalize
     }
 }

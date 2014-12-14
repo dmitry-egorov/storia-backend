@@ -1,26 +1,24 @@
 package com.pointswarm.minions.registrator
 
 import com.firebase.client._
-import com.ning.http.client.Response
 import com.pointswarm.commands.ProviderType._
 import com.pointswarm.commands._
 import com.pointswarm.common.dtos._
 import com.pointswarm.common.views._
-import com.pointswarm.tools.extensions.SanitizeExtensions._
+import com.pointswarm.minions.paparazzi.FindSocialPictureCommand
 import com.pointswarm.tools.fireLegion._
-import com.pointswarm.tools.hellfire.Extensions._
+import com.pointswarm.tools.fireLegion.messenger.MessengerExtensions._
+import com.pointswarm.tools.fireLegion.messenger.SuccessResponse
 import com.pointswarm.tools.futuristic.FutureExtensions._
-import dispatch._
-
+import com.pointswarm.tools.hellfire.Extensions._
 import org.json4s._
-import org.json4s.DynamicJValue._
-import org.json4s.jackson.JsonMethods._
 
-import scala.concurrent.{Future, _}
+import scala.concurrent._
 
-class Registrator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[RegisterCommand]
+class Registrator(root: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[RegisterCommand]
 {
-    val Future = scala.concurrent.Future
+    private lazy val accountsRoot = root / "accounts"
+    private lazy val profilesRoot: Firebase = root / "profiles"
 
     def execute(commandId: CommandId, command: RegisterCommand): Future[AnyRef] =
     {
@@ -28,93 +26,45 @@ class Registrator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
         val name = command.name
         val provider = command.provider
         val providerData = command.providerData
-        val providerUid = command.providerUid
-
-        assertAccountExists(accountId)
-        .flatMap(_ => getProfileImageUrl(provider, providerUid))
-        .flatMap(imageUrl => setViews(accountId, name, provider, providerData, imageUrl))
-        .map(_ => SuccessResponse)
-    }
-
-    def assertAccountExists(accountId: AccountId): Future[Unit] =
-    {
-        fb
-        .child("accounts")
-        .child(accountId)
-        .exists
-        .map(exists => if (exists) throw new AccountAlreadyExistsException(accountId))
-    }
-
-    def setViews(accountId: AccountId, name: String, provider: ProviderType, providerData: Map[String, AnyRef], imageUrl: String): Future[Unit] =
-    {
+        val providerUid = getProviderUid(providerData)
         val profileId = name.sanitize
 
-        val profileFuture = setProfileView(name, imageUrl, profileId)
-        val accountFuture = setAccountView(provider, providerData, accountId, profileId)
-
-        List(profileFuture, accountFuture).waitAll
-    }
-
-    def setAccountView(provider: ProviderType, providerData: Map[String, AnyRef], accountId: AccountId, profileId: ProfileId): Future[String] =
-    {
-        val accountData = new AccountView(provider, profileId, Some(providerData))
-
-        fb
-        .child("accounts")
-        .child(accountId)
-        .set(accountData)
-    }
-
-    private def setProfileView(name: String, imageUrl: String, profileId: ProfileId): Future[String] =
-    {
-        val profileData = new ProfileView(name, imageUrl, "")
-
-        fb
-        .child("profiles")
-        .child(profileId)
-        .set(profileData)
-    }
-
-    private def getProfileImageUrl(provider: ProviderType, userId: String): Future[String] =
-    {
-        provider match
+        for
         {
-            case Facebook => getFacebookImageUrl(userId)
-            case Google => getGoogleImageUrl(userId)
-            case _ => Future.successful(defaultImageUrl)
+            _ <- assertAccountDoesntExist(accountId)
+            _ <- setViews(accountId, profileId, name, provider, providerData, providerUid)
         }
+        yield SuccessResponse
     }
 
-    def getFacebookImageUrl(userId: String): Future[String] =
+    private def getProviderUid(providerData: Map[String, AnyRef]) = providerData("id").toString
+
+    private def assertAccountDoesntExist(accountId: AccountId): Future[Unit] =
     {
-        Future.successful(s"http://graph.facebook.com/$userId/picture?type=square")
+        accountsRoot / accountId whenExists (() => throw AccountAlreadyExistsException(accountId))
     }
 
-    def getGoogleImageUrl(userId: String): Future[String] =
+    private def setViews(accountId: AccountId, profileId: ProfileId, name: Name, provider: ProviderType, providerData: AnyRef, providerUid: String): Future[Unit] =
     {
-        Http(url(s"http://picasaweb.google.com/data/entry/api/user/$userId?alt=json"))
-        .map(data => getUrlFromGoogleResponse(data))
-        .recover
-        {
-            case _ => defaultImageUrl
-        }
+        List(
+            setProfileView(name, profileId),
+            setAccountView(accountId, profileId, provider, providerData),
+            commandPaparazzi(profileId, provider, providerUid)
+        ).waitAll
     }
 
-    def getUrlFromGoogleResponse(data: Response): String =
+    private def setAccountView(accountId: AccountId, profileId: ProfileId, provider: ProviderType, providerData: AnyRef): Future[String] =
     {
-        val jvalue = dyn(parse(data.getResponseBody)).entry.gphoto$thumbnail.$t.raw
-
-        jvalue match
-        {
-            case JString(value) => value
-            case _ => defaultImageUrl
-        }
+        accountsRoot / accountId <-- AccountView(provider, profileId, Some(providerData))
     }
 
-    def defaultImageUrl: String =
+    private def setProfileView(name: Name, profileId: ProfileId): Future[String] =
     {
-        "http://pointswarm.com/img/anonymous.png"
+        profilesRoot / profileId <-- ProfileView(name, None, "")
+    }
+
+    private def commandPaparazzi(profileId: ProfileId, provider: ProviderType, providerUid: String): Future[AnyRef] =
+    {
+        root request("paparazzi", FindSocialPictureCommand(profileId, provider, providerUid))
     }
 }
-
-

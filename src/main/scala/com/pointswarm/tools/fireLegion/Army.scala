@@ -6,7 +6,7 @@ import com.pointswarm.tools.fireLegion.interfaces.Conqueror
 
 import scala.concurrent._
 
-class Army(conquerors: List[Conqueror])(implicit ec: ExecutionContext) extends Conqueror
+case class Army(conquerors: List[Conqueror])(implicit ec: ExecutionContext) extends Conqueror
 {
     def prepare: Future[Unit] =
     {

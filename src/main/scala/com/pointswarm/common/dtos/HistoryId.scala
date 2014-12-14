@@ -8,6 +8,6 @@ case class HistoryId(value: String)
 
 object HistoryId
 {
-    implicit def fromString(s: String): HistoryId = new HistoryId(s)
+    implicit def fromString(s: String): HistoryId = HistoryId(s)
     implicit def toString(id: HistoryId): String = id.value
 }

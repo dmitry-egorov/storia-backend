@@ -9,9 +9,9 @@ import org.json4s._
 
 import scala.concurrent._
 
-class Distributor(fb: Firebase)(implicit ec: ExecutionContext, f: Formats) extends Minion[DistributeCommand]
+class Distributor(root: Firebase)(implicit ec: ExecutionContext, f: Formats) extends Minion[DistributeCommand]
 {
-    private val mapper = new CommandsMapper(fb.child("minionsMap"))
+    private val mapper = new CommandsMapper(root / "minionsMap")
 
     override def prepare: Future[Unit] =
     {
@@ -29,22 +29,17 @@ class Distributor(fb: Firebase)(implicit ec: ExecutionContext, f: Formats) exten
 
         val minions = currentMap.getOrElse(name, Nil)
 
-        if (minions.isEmpty) throw new MinionsNotFoundException(name)
+        if (minions.isEmpty) throw MinionsNotFoundException(name)
 
         minions
         .map(m => send(id, payload, m))
         .whenAll
-        .map(_ => new DistributedResponse(name, payload, command.addedOn, minions))
+        .map(_ => DistributedResponse(minions))
     }
 
     private def send(id: CommandId, command: AnyRef, name: MinionName): Future[String] =
     {
-        fb
-        .child("minions")
-        .child(name)
-        .child("inbox")
-        .child(id)
-        .set(command)
+        root / "minions" / name / "inbox" / id <-- command
     }
 }
 

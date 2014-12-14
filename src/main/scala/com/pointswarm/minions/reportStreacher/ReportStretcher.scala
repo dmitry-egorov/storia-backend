@@ -7,6 +7,7 @@ import com.pointswarm.common.views._
 import com.pointswarm.migration.Migrator
 import com.pointswarm.tools.elastic._
 import com.pointswarm.tools.fireLegion._
+import com.pointswarm.tools.fireLegion.messenger.SuccessResponse
 import org.json4s.Formats
 
 import scala.concurrent._
@@ -19,13 +20,10 @@ class ReportStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: Ex
         val eventId = command.eventId
         val userId = command.authorId
 
-        val docId = eventId.value + "_" + userId.value
-        val textEntry = new TextIndexEntryView(eventId, content)
+        val docId = eventId + "_" + userId
+        val textEntry = TextIndexEntryView(eventId, content)
 
-        elastic
-        .index("texts")
-        .doc("text", docId, textEntry)
-        .map(_ => SuccessResponse)
+        elastic index "texts" doc("text", docId, textEntry) map (_ => SuccessResponse)
     }
 
     override def prepare: Future[Unit] = Migrator.createTextIndex(elastic)

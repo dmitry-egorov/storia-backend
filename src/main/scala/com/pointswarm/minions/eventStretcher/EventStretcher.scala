@@ -8,6 +8,7 @@ import com.pointswarm.migration.Migrator
 import com.pointswarm.tools.elastic._
 import com.pointswarm.tools.extensions.SanitizeExtensions._
 import com.pointswarm.tools.fireLegion._
+import com.pointswarm.tools.fireLegion.messenger.SuccessResponse
 import org.json4s.Formats
 
 import scala.concurrent._
@@ -17,13 +18,10 @@ class EventStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: Exe
     def execute(commandId: CommandId, command: AddEventCommand): Future[AnyRef] =
     {
         val title = command.title
-        val id = new EventId(title.sanitize)
-        val textEntry = new TextIndexEntryView(id, title)
+        val id = EventId(title.sanitize)
+        val textEntry = TextIndexEntryView(id, title)
 
-        elastic
-        .index("texts")
-        .doc("text", id.value, textEntry)
-        .map(_ => SuccessResponse)
+        elastic index "texts" doc("text", id, textEntry) map (_ => SuccessResponse)
     }
 
     override def prepare: Future[Unit] = Migrator.createTextIndex(elastic)

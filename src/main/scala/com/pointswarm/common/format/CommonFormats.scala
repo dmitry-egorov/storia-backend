@@ -10,14 +10,15 @@ import org.json4s.jackson.Serialization
 object CommonFormats
 {
     implicit val formats = Serialization.formats(NoTypeHints) +
-                           SingleStringCaseClassSerializer[EventId](x => new EventId(x)) +
-                           SingleStringCaseClassSerializer[ReportId](x => new ReportId(x)) +
-                           SingleStringCaseClassSerializer[ProfileId](x => new ProfileId(x)) +
-                           SingleStringCaseClassSerializer[CommandName](x => new CommandName(x)) +
-                           SingleStringCaseClassSerializer[MinionName](x => new MinionName(x)) +
-                           SingleStringCaseClassSerializer[HistoryId](x => new HistoryId(x)) +
-                           SingleStringCaseClassSerializer[HtmlContent](x => new HtmlContent(x)) +
-                           SingleStringCaseClassSerializer[AccountId](x => new AccountId(x)) +
+                           SingleStringCaseClassSerializer[EventId](x => EventId(x)) +
+                           SingleStringCaseClassSerializer[ReportId](x => ReportId(x)) +
+                           SingleStringCaseClassSerializer[ProfileId](x => ProfileId(x)) +
+                           SingleStringCaseClassSerializer[CommandName](x => CommandName(x)) +
+                           SingleStringCaseClassSerializer[MinionName](x => MinionName(x)) +
+                           SingleStringCaseClassSerializer[HistoryId](x => HistoryId(x)) +
+                           SingleStringCaseClassSerializer[HtmlContent](x => HtmlContent(x)) +
+                           SingleStringCaseClassSerializer[AccountId](x => AccountId(x)) +
+                           SingleStringCaseClassSerializer[Name](x => Name(x)) +
                            new DateTimeSerializer +
                            new ProviderTypeSerializer
 

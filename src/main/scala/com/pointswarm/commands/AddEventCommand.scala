@@ -1,6 +1,8 @@
 package com.pointswarm.commands
 
-case class AddEventCommand(title: String)
+import com.pointswarm.common.dtos._
+
+case class AddEventCommand(title: Name)
 {
-    assert(title != null && title.trim.nonEmpty)
+    assert(title != null)
 }

@@ -40,11 +40,11 @@ class Client(uri: String)(implicit ec: ExecutionContext)
 
     class SearchDefinition(indexName: String)
     {
-        def term[T](termName: String, queryText: String)(implicit m: Manifest[T], f: Formats): Future[List[T]] =
+        def `match`[T](fieldName: String, queryText: String)(implicit m: Manifest[T], f: Formats): Future[List[T]] =
             Http
             {
                 (postUrl / indexName / "_search")
-                .setBody( s"""{"query" : {"term" : { "$termName" : "$queryText" }}}""".getBytes(StandardCharsets.UTF_8))
+                .setBody( s"""{"query" : {"match" : { "$fieldName" : "$queryText" }}}""".getBytes(StandardCharsets.UTF_8))
             }
             .ensureOk
             .map(_.hits[T])

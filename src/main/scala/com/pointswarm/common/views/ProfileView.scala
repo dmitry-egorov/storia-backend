@@ -1,6 +1,8 @@
 package com.pointswarm.common.views
 
-case class ProfileView(name: String, image: String, bio: String)
+import com.pointswarm.common.dtos.Name
+
+case class ProfileView(name: Name, image: Option[String], bio: String)
 {
     assert(name != null)
     assert(image != null)

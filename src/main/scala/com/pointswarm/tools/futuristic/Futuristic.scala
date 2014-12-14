@@ -1,7 +1,7 @@
 package com.pointswarm.tools.futuristic
 
-import scala.concurrent.duration._
 import scala.concurrent._
+import scala.concurrent.duration._
 
 object Futuristic
 {
@@ -10,13 +10,17 @@ object Futuristic
     def timeoutFail[T](duration: Duration)(implicit ec: ExecutionContext): Future[T] =
     {
         val p = Promise[T]()
-        timer.schedule(new java.util.TimerTask
+
+        if (duration != Duration.Inf)
         {
-            def run()
+            timer.schedule(new java.util.TimerTask
             {
-                p.failure(new TimeoutException)
-            }
-        }, duration.toMillis)
+                def run()
+                {
+                    p.failure(new TimeoutException)
+                }
+            }, duration.toMillis)
+        }
 
         p.future
     }
@@ -24,13 +28,16 @@ object Futuristic
     def timeout[T](value: T, duration: Duration)(implicit ec: ExecutionContext): Future[T] =
     {
         val p = Promise[T]()
-        timer.schedule(new java.util.TimerTask
+        if (duration != Duration.Inf)
         {
-            def run()
+            timer.schedule(new java.util.TimerTask
             {
-                p.success(value)
-            }
-        }, duration.toMillis)
+                def run()
+                {
+                    p.success(value)
+                }
+            }, duration.toMillis)
+        }
 
         p.future
     }

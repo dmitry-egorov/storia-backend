@@ -6,10 +6,8 @@ case class SearcherResponse(eventIds: List[EventId])
 
 object SearcherResponse
 {
-
     implicit class EventIdsEx(val eventIds: List[EventId]) extends AnyVal
     {
-        def toSearchResponse = new SearcherResponse(eventIds)
+        def toSearchResponse = SearcherResponse(eventIds)
     }
-
 }

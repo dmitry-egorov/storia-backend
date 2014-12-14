@@ -4,6 +4,8 @@ import com.firebase.client.Firebase
 import com.pointswarm.commands._
 import com.pointswarm.common.dtos._
 import com.pointswarm.tools.fireLegion._
+import com.pointswarm.tools.fireLegion.messenger.MessengerExtensions._
+import com.pointswarm.tools.fireLegion.messenger.SuccessResponse
 import com.pointswarm.tools.hellfire.Extensions._
 import org.json4s.Formats
 
@@ -13,25 +15,44 @@ class Voter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Min
 {
     def execute(commandId: CommandId, command: UpvoteCommand): Future[AnyRef] =
     {
-        val upvotedRef = getUpvotedRef(command.reportId, command.voterId)
+        val reportId = command.reportId
+        val voterId = command.voterId
+
         for
         {
-            upvoted <- upvotedRef.exists
-            _ <-
-            if (upvoted)
-                upvotedRef.remove
-            else
-                upvotedRef.set(true: java.lang.Boolean)
+            u <- hasUpvoted(reportId, voterId)
+            _ <- updateUpvoted(reportId, voterId, u)
+            _ <- sortReports(reportId)
         }
         yield SuccessResponse
     }
 
-    def getUpvotedRef(reportId: ReportId, profileId: String): Firebase =
+    private def updateUpvoted(reportId: ReportId, voterId: ProfileId, upvoted: Boolean): Future[String] =
     {
-        fb
-        .child("reports")
-        .child(reportId)
-        .child("upvotedBy")
-        .child(profileId)
+        if (upvoted) removeUpvoted(reportId, voterId) else setUpvoted(reportId, voterId)
+    }
+
+    private def hasUpvoted(reportId: ReportId, voterId: ProfileId): Future[Boolean] =
+    {
+        upvotedRoot(reportId, voterId).exists
+    }
+
+    private def setUpvoted(reportId: ReportId, voterId: ProfileId): Future[String] =
+    {
+        upvotedRoot(reportId, voterId) <-- true
+    }
+
+    private def removeUpvoted(reportId: ReportId, voterId: ProfileId): Future[String] =
+    {
+        upvotedRoot(reportId, voterId).remove
+    }
+
+    private def upvotedRoot(reportId: ReportId, profileId: String): Firebase =
+        fb / "reports" / reportId / "upvotedBy" / profileId
+
+    private def sortReports(reportId: ReportId): Future[Option[AnyRef]] =
+    {
+        val command = SortReportsCommand(None, Some(reportId))
+        fb.request[SortReportsCommand]("reportsSorter", command)
     }
 }

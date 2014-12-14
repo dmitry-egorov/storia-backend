@@ -5,6 +5,7 @@ import com.pointswarm.commands._
 import com.pointswarm.common.dtos._
 import com.pointswarm.common.views._
 import com.pointswarm.tools.fireLegion._
+import com.pointswarm.tools.fireLegion.messenger.SuccessResponse
 import com.pointswarm.tools.futuristic.FutureExtensions._
 import com.pointswarm.tools.hellfire.Extensions._
 import org.json4s._
@@ -14,14 +15,33 @@ import scala.concurrent.duration._
 
 class ReportsSorter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[SortReportsCommand]
 {
+    private lazy val reportsRoot: Firebase = fb / "reports"
+    private lazy val eventsRoot: Firebase = fb / "events"
+
     def execute(commandId: CommandId, command: SortReportsCommand): Future[AnyRef] =
     {
-        val eventId = command.eventId
+        for
+        {
+            eventId <- findEventId(command)
+            reportIds <- getReportIdsOf(eventId)
+            reports <- getReports(reportIds)
+            _ <- setBestReport(eventId, reports)
+        }
+        yield SuccessResponse
+    }
 
-        getReportIdsOf(eventId)
-        .flatMap(reportIds => getReports(reportIds))
-        .flatMap(reports => setBestReport(eventId, reports))
-        .map(_ => SuccessResponse)
+    def getReportsEventId(id: ReportId): Future[EventId] =
+    {
+        (reportsRoot / id / "eventId").awaitValue[EventId](5 seconds)
+    }
+
+    def findEventId(command: SortReportsCommand): Future[EventId] =
+    {
+        command.eventId match
+        {
+            case Some(id) => Future.successful(id)
+            case None     => getReportsEventId(command.reportId.get)
+        }
     }
 
     def setBestReport(eventId: EventId, reports: List[(ReportId, ReportView)]): Future[String] =
@@ -32,46 +52,32 @@ class ReportsSorter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) ext
 
     def setPreviewReport(eventId: EventId, previewId: ReportId): Future[String] =
     {
-        getEventRef(eventId)
-        .child("previewId")
-        .set(previewId: String)
+        eventsRoot / eventId / "previewId" <-- (previewId: String)
     }
 
     def findBestReport(reports: List[(ReportId, ReportView)]): ReportId =
     {
-        reports.maxBy(r => r._2.upvotedBy.count(_ => true))._1
+        reports.maxBy(r => countUpvotes(r))._1
+    }
+
+    def countUpvotes(r: (ReportId, ReportView)): Int =
+    {
+        r._2.upvotedBy.map(x => x.count(_ => true)).getOrElse(0)
     }
 
     def getReports(reportIds: List[ReportId]): Future[List[(ReportId, ReportView)]] =
     {
-        reportIds
-        .map(id => getReport(id))
-        .whenAll
+        reportIds map getReport whenAll
     }
 
     def getReport(id: ReportId): Future[(ReportId, ReportView)] =
     {
-        fb
-        .child("reports")
-        .child(id)
-        .awaitValue[ReportView]
-        .timeout(5 seconds)
-        .map(r => (id, r))
+        (reportsRoot / id).awaitValue[ReportView](5 seconds).map(r => (id, r))
     }
 
-    def getReportIdsOf(eventId: EventId): Future[List[ReportId]] =
+    def getReportIdsOf(id: EventId): Future[List[ReportId]] =
     {
-        getEventRef(eventId)
-        .child("reports")
-        .awaitValue[Map[ReportId, Boolean]]
-        .timeout(5 seconds)
+        (eventsRoot / id / "reports").awaitValue[Map[ReportId, Boolean]](5 seconds)
         .map(m => m.keys.toList)
-    }
-
-    def getEventRef(eventId: EventId): Firebase =
-    {
-        fb
-        .child("events")
-        .child(eventId)
     }
 }

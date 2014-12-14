@@ -4,21 +4,21 @@ import org.joda.time._
 
 import scala.util._
 
-case class CommandResult(ok: Boolean, data: Option[AnyRef], error: Option[String], createdOn: DateTime)
+case class CommandResult[TCommand](ok: Boolean, data: Option[AnyRef], error: Option[String], createdOn: DateTime, command: TCommand)
 
 object CommandResult
 {
-    def apply(t: Try[AnyRef]) = from(t)
+    def apply[T](t: Try[AnyRef], command: T) = from(t, command)
 
-    def from(t: Try[AnyRef]) =
-        t match
+    def from[T](response: Try[AnyRef], command: T) =
+        response match
         {
-            case Success(data)  => CommandResult.Ok(data)
-            case Failure(cause) => CommandResult.Error(cause)
+            case Success(data)  => CommandResult.Ok(data, command)
+            case Failure(cause) => CommandResult.Error(cause, command)
         }
 
-    def Ok(data: AnyRef) = new CommandResult(true, Some(data), None, DateTime.now(DateTimeZone.UTC))
+    def Ok[T](data: AnyRef, command: T):CommandResult[T] = CommandResult(ok = true, Some(data), None, DateTime.now(DateTimeZone.UTC), command)
 
-    def Error(cause: Throwable) = new CommandResult(false, None, Some(cause.getMessage), DateTime.now(DateTimeZone.UTC))
+    def Error[T](cause: Throwable, command: T):CommandResult[T] = CommandResult(ok = false, None, Some(cause.getMessage), DateTime.now(DateTimeZone.UTC), command)
 }
 

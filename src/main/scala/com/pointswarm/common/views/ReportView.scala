@@ -9,7 +9,7 @@ case class ReportView
     addedOn: DateTime,
     authorId: ProfileId,
     eventId: EventId,
-    upvotedBy: Set[ProfileId]
+    upvotedBy: Option[Map[ProfileId, Boolean]]
     )
 {
     assert(content != null)

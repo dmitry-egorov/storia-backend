@@ -7,7 +7,8 @@ case class DistributeCommand(name: CommandName, payload: AnyRef, addedOn: DateTi
 
 object DistributeCommand
 {
-    def of[TCommand <: AnyRef](command: TCommand)(implicit m: Manifest[TCommand]) = new DistributeCommand(CommandName.of[TCommand], command, DateTime.now(DateTimeZone.UTC))
+    def apply[TCommand <: AnyRef](command: TCommand)(implicit m: Manifest[TCommand]): DistributeCommand =
+        DistributeCommand(CommandName[TCommand], command, DateTime.now(DateTimeZone.UTC))
 }
 
 

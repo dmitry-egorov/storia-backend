@@ -6,35 +6,41 @@ import com.pointswarm.common.dtos._
 import com.pointswarm.common.views._
 import com.pointswarm.tools.extensions.SanitizeExtensions._
 import com.pointswarm.tools.fireLegion._
+import com.pointswarm.tools.fireLegion.messenger.SuccessResponse
 import com.pointswarm.tools.hellfire.Extensions._
 import org.json4s.Formats
 
 import scala.concurrent._
 
-class EventViewGenerator(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand]
+class EventViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand]
 {
+    private lazy val eventsRoot = root / "events"
+
     def execute(commandId: CommandId, command: AddEventCommand): Future[AnyRef] =
     {
         val title = command.title
-        val id = new EventId(title.sanitize)
+        val id = EventId(title.sanitize)
 
-        val eventRef = fb.child("events").child(id.value)
+        for
+        {
+            exists <- exists(id)
+            _ <- generateEventView(title, id, exists)
+        }
+        yield SuccessResponse
+    }
 
-        eventRef
-        .exists
-        .flatMap(
-                exists =>
-                {
-                    if (exists)
-                    {
-                        throw new EventAlreadyExistsError(id)
-                    }
+    private def exists(eventId: EventId): Future[Boolean] =
+    {
+        eventsRoot / eventId exists
+    }
 
-                    val view = EventView.from(title)
+    private def generateEventView(title: String, id: EventId, exists: Boolean): Future[String] =
+    {
+        if (exists) throw EventAlreadyExistsError(id)
 
-                    eventRef.set(view)
-                })
-        .map(_ => SuccessResponse)
+        val view = EventView(title)
+
+        eventsRoot / id <-- view
     }
 }
 

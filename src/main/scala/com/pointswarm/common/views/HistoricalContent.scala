@@ -11,5 +11,5 @@ case class HistoricalContent(content: HtmlContent, addedOn: DateTime)
 
 object HistoricalContent
 {
-    def apply(content: HtmlContent) = new HistoricalContent(content, DateTime.now(DateTimeZone.UTC))
+    def apply(content: HtmlContent):HistoricalContent = HistoricalContent(content, DateTime.now(DateTimeZone.UTC))
 }
