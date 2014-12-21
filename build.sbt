@@ -23,9 +23,14 @@ lazy val scalasourcing = (project in file("scalasourcing")).
                          settings(libraryDependencies ++= scalasourcingDependencies).
                          dependsOn(hellfire, futuristic)
 
+lazy val scalasourcingFirebase = (project in file("scalasourcing-firebase")).
+                         settings(Commons.settings: _*).
+                         settings(organization := "com.scalasourcing", name := "scalasourcing-firebase", version := "0.0.1").
+                         settings(libraryDependencies ++= scalasourcingFirebaseDependencies).
+                         dependsOn(hellfire, futuristic, scalasourcing)
+
 lazy val worker = (project in file("worker")).
                   settings(Commons.settings: _*).
                   settings(organization := "com.pointswarm", name := "storia-worker", version := "0.0.1").
                   settings(libraryDependencies ++= storiaWorkerDependencies).
-                  dependsOn(scalasourcing, tools, hellfire, futuristic)
-
+                  dependsOn(scalasourcing, tools, hellfire, futuristic, scalasourcingFirebase)

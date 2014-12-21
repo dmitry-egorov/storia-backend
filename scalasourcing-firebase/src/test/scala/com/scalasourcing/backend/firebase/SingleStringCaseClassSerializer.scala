@@ -1,4 +1,4 @@
-package com.scalasourcing.backend.serialization
+package com.scalasourcing.backend.firebase
 
 import org.json4s._
 

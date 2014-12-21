@@ -1,14 +1,14 @@
 package com.scalasourcing.backend.firebase
 
-import com.dmitryegorov.futuristic.cancellation.CancellationSource
 import com.dmitryegorov.futuristic.ObservableExtensions._
+import com.dmitryegorov.futuristic.cancellation.CancellationSource
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
-import com.scalasourcing.backend.{ExecuteCommand, Root}
-import com.scalasourcing.backend.Root.{RootEvent, RootCommand}
-import org.scalatest.{Matchers, FunSuite}
+import com.scalasourcing.backend.TestRoot.{RootCommand, RootEvent}
+import com.scalasourcing.backend._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.{FunSuite, Matchers}
 
 class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
 {
@@ -25,23 +25,23 @@ class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
 
     test("Should listen and execute commands")
     {
-        val agg = new FirebaseExecutor[Root.Id, Root](fb, es)
+        val agg = FirebaseExecutor(TestRoot)(fb, es)
 
         val run = agg.run(source).doOnNext(x => println(x)).await
 
-        val rootRef = fb / "commands" / "root"
+        val rootRef = fb / "commands" / "testRoot"
         val commandId = "commandId1"
-        val rootId = Root.Id("rootId1")
+        val rootId = TestRootId("rootId1")
         val expected = Seq(RootEvent())
 
         val f =
-        for
-        {
-            _ <- rootRef / "inbox" / commandId <-- ExecuteCommand(rootId, RootCommand())
-            result <- (rootRef / "results" / commandId).awaitValue[Seq[RootEvent]]()
-            events <- (fb / "aggregates" / "root" / rootId / "events").awaitValue[Seq[RootEvent]]()
-        }
-        yield (result, events)
+            for
+            {
+                _ <- rootRef / "inbox" / commandId <-- ExecuteCommand(rootId, RootCommand())
+                result <- (rootRef / "results" / commandId).awaitValue[Seq[RootEvent]]()
+                events <- (fb / "aggregates" / "testRoot" / rootId / "events").awaitValue[Seq[RootEvent]]()
+            }
+            yield (result, events)
 
         whenReady(f)
         {
@@ -50,7 +50,8 @@ class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
                 t._1 should equal(expected)
                 t._2 should equal(expected)
                 source.cancel()
-                whenReady(run) { _ => ()}
+                whenReady(run)
+                { _ => () }
             }
         }
     }

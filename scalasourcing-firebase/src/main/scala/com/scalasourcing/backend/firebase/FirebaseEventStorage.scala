@@ -2,10 +2,11 @@ package com.scalasourcing.backend.firebase
 
 import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.hellfire.Hellfire._
-import com.firebase.client._
+import com.firebase.client.Firebase
 import com.scalasourcing.backend.EventStorage
 import com.scalasourcing.backend.firebase.StringExtensions._
-import com.scalasourcing.model.Aggregate._
+import com.scalasourcing.model.Aggregate.AggregateId
+import com.scalasourcing.model.{Aggregate, AggregateRoot}
 import org.json4s.Formats
 
 import scala.concurrent._
@@ -14,17 +15,20 @@ class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: F
 {
     private lazy val aggregatesRef = fb / "aggregates"
 
-    override def get[AR: Manifest](id: IdOf[AR]): Future[EventsSeqOf[AR]] =
+    def get[R <: AggregateRoot[R]](a: Aggregate[R]): a.Id => Future[a.EventsSeq] =
     {
-        (aggregateRef(id) / "events")
+        id =>
+        (aggregateRef(a, id) / "events")
         .value[Seq[AnyRef]]
         .map(x => x.getOrElse(Seq.empty))
-        .mapTo[EventsSeqOf[AR]]
+        .mapTo[a.EventsSeq]
     }
 
-    override def tryPersist[AR: Manifest](id: IdOf[AR], events: EventsSeqOf[AR], expectedVersion: Int): Future[Boolean] =
+    def tryPersist[R <: AggregateRoot[R]](a: Aggregate[R]): (a.Id, a.EventsSeq, Int) => Future[Boolean] =
     {
-        val ar = aggregateRef(id)
+        (id, events, expectedVersion) =>
+
+        val ar = aggregateRef(a, id)
 
         val versionRef = ar / "version"
 
@@ -55,9 +59,9 @@ class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: F
                 })
     }
 
-    private def aggregateRef[AR: Manifest](id: IdOf[AR]): Firebase =
+    private def aggregateRef[AR <: AggregateRoot[AR]](a: Aggregate[AR], id: AggregateId): Firebase =
     {
-        val name = implicitly[Manifest[AR]].runtimeClass.getSimpleName.decapitalize
+        val name = a.getClass.getSimpleName.replace("$", "").decapitalize
         val value = id.value
 
         aggregatesRef / name / value

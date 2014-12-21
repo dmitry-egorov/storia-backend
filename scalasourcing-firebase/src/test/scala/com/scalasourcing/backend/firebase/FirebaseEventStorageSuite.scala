@@ -1,7 +1,7 @@
 package com.scalasourcing.backend.firebase
 
-import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
+import com.dmitryegorov.hellfire.Hellfire._
 import com.scalasourcing.backend.EventStorageSuite
 
 class FirebaseEventStorageSuite extends EventStorageSuite

@@ -1,46 +1,46 @@
 package com.scalasourcing.backend
 
-import com.scalasourcing.model.Aggregate._
 import com.scalasourcing.model._
 
-import scala.concurrent._
+import scala.concurrent.{ExecutionContext, Future}
 
 trait EventStorage
 {
     implicit val ec: ExecutionContext
 
-    def get[AR: Manifest](id: IdOf[AR]): Future[EventsSeqOf[AR]]
-    def tryPersist[AR: Manifest](id: IdOf[AR], events: EventsSeqOf[AR], expectedVersion: Int): Future[Boolean]
+    def get[R <: AggregateRoot[R]](a: Aggregate[R]): (a.Id) => Future[a.EventsSeq]
+    def tryPersist[R <: AggregateRoot[R]](a: Aggregate[R]): (a.Id, a.EventsSeq, Int) => Future[Boolean]
 
-    def persist[AR: Manifest](id: IdOf[AR], events: EventsSeqOf[AR], expectedVersion: Int): Future[Unit] =
+    def persist[R <: AggregateRoot[R]](a: Aggregate[R])(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Unit] =
     {
-        tryPersist(id, events, expectedVersion)
+        tryPersist(a)(id, events, expectedVersion)
         .flatMap(
                 committed =>
                     if (committed) Future.successful(())
-                    else persist(id, events, expectedVersion)
+                    else persist(a)(id, events, expectedVersion)
             )
     }
 
-    def execute[AR <: AggregateRoot[AR] : Factory : Manifest](id: IdOf[AR], command: CommandOf[AR]): Future[CommandResultOf[AR]] =
+    def execute[R <: AggregateRoot[R]](a: Aggregate[R])(id: a.Id, command: a.Command): Future[a.Result] =
     {
-        tryExecute(id, command)
+        tryExecute(a)(id, command)
         .flatMap(
                 result =>
                     if (result.isDefined) Future.successful(result.get)
-                    else execute(id, command)
+                    else execute(a)(id, command)
             )
     }
 
-    def tryExecute[AR <: AggregateRoot[AR] : Factory : Manifest](id: IdOf[AR], command: CommandOf[AR]): Future[Option[CommandResultOf[AR]]] =
+    def tryExecute[R <: AggregateRoot[R]](a: Aggregate[R])(id: a.Id, command: a.Command): Future[Option[a.Result]] =
     {
+        implicit val f = a
         for
         {
-            events <- get(id)
+            events <- get(a)(id)
             result = events ! command
             persisted <- result match
             {
-                case Left(newEvents) => tryPersist(id, newEvents, events.length)
+                case Left(newEvents) => tryPersist(a)(id, newEvents, events.length)
                 case _               => Future.successful(true)
             }
         }

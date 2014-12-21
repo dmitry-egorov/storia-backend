@@ -20,7 +20,7 @@ trait AggregateBDD[AR <: AggregateRoot[AR]]
         def when_I(command: CommandOf[AR]): FlowWhen = FlowWhen(state ! command)
     }
 
-    case class FlowWhen(eventsTry: CommandResultOf[AR])
+    case class FlowWhen(eventsTry: ResultOf[AR])
     {
         def then_it_is(expected: EventOf[AR]*) =
         {

@@ -5,12 +5,14 @@ import com.scalasourcing.model._
 
 sealed trait Report extends AggregateRoot[Report]
 
+case class ReportId(userId: ProfileId, eventId: EventId) extends CompositeAggregateId
+{
+    val ids = Seq(userId, eventId)
+}
+
 object Report extends Aggregate[Report]
 {
-    case class Id(userId: ProfileId, eventId: EventId) extends Identity with CompositeAggregateId
-    {
-        val ids = Seq(userId, eventId)
-    }
+    type Id = ReportId
 
     case class DoReport(content: HtmlContent) extends Command
 
@@ -46,7 +48,7 @@ object Report extends Aggregate[Report]
             case DoReport(newContent) => edit(newContent)
         }
 
-        private def edit(newContent: HtmlContent): CommandResult =
+        private def edit(newContent: HtmlContent): Result =
         {
             if(newContent == content) ContentIsTheSame()
             else Edited(newContent)

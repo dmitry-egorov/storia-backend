@@ -1,17 +1,19 @@
 package com.pointswarm.domain.voting
 
 import com.pointswarm.common.dtos.ProfileId
-import com.pointswarm.domain.reporting.Report
+import com.pointswarm.domain.reporting.ReportId
 import com.scalasourcing.model._
 
 sealed trait Upvote extends AggregateRoot[Upvote]
 
+case class UpvoteId(userId: ProfileId, reportId: ReportId) extends CompositeAggregateId
+{
+    val ids = Seq(userId, reportId)
+}
+
 object Upvote extends Aggregate[Upvote]
 {
-    case class Id(userId: ProfileId, reportId: Report.Id) extends Identity with CompositeAggregateId
-    {
-        val ids = Seq(userId, reportId)
-    }
+    type Id = UpvoteId
     
     case class Cast() extends Command
     case class Cancel() extends Command

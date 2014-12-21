@@ -23,7 +23,7 @@ import com.pointswarm.minions.reportViewGenerator._
 import com.pointswarm.minions.reportsSorter._
 import com.pointswarm.minions.searcher.Searcher
 import com.pointswarm.minions.voter._
-import com.scalasourcing.backend.firebase.{FirebaseEventStorage, FirebaseExecutorsBuilder}
+import com.scalasourcing.backend.firebase.{FirebaseExecutorsBuilder, FirebaseEventStorage}
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -94,8 +94,8 @@ object WorkerApp extends App
     def runExecutor: Future[Unit] =
     {
         FirebaseExecutorsBuilder(dddRef, es)
-        .and[Report.Id, Report]
-        .and[Upvote.Id, Upvote]
+        .and(Report)
+        .and(Upvote)
         .build
         .run(cancellation)
         .doOnNext
