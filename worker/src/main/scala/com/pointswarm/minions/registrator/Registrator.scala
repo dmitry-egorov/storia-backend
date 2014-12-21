@@ -9,7 +9,7 @@ import com.pointswarm.minions.paparazzi.FindSocialPictureCommand
 import com.pointswarm.fireLegion._
 import com.pointswarm.fireLegion.messenger.MessengerExtensions._
 import com.pointswarm.fireLegion.messenger.SuccessResponse
-import com.dmitryegorov.tools.futuristic.FutureExtensions._
+import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.hellfire.Hellfire._
 import org.json4s._
 

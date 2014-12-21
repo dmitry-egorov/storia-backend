@@ -1,7 +1,9 @@
-package com.dmitryegorov.tools.futuristic
+package com.dmitryegorov.futuristic
 
-import scala.concurrent._
-import scala.concurrent.duration._
+import java.util.concurrent.TimeoutException
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object Futuristic
 {

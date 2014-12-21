@@ -1,6 +1,6 @@
 package com.pointswarm.fireLegion
 
-import com.dmitryegorov.tools.futuristic.cancellation.CancellationToken
+import com.dmitryegorov.futuristic.cancellation.CancellationToken
 import com.pointswarm.fireLegion.interfaces.Conqueror
 
 import scala.concurrent._

@@ -29,6 +29,7 @@ object Aggregate
         def value: String
         override def toString = value
     }
+    type AggregateCommandResult = Either[Seq[AggregateEvent], AggregateError]
 
     trait IdOf[Root] extends AggregateId
     trait CommandOf[Root] extends AggregateCommand

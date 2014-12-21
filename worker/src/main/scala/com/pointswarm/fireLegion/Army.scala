@@ -1,7 +1,7 @@
 package com.pointswarm.fireLegion
 
-import com.dmitryegorov.tools.futuristic.FutureExtensions._
-import com.dmitryegorov.tools.futuristic.cancellation._
+import com.dmitryegorov.futuristic.FutureExtensions._
+import com.dmitryegorov.futuristic.cancellation._
 import com.pointswarm.fireLegion.interfaces.Conqueror
 
 import scala.concurrent._

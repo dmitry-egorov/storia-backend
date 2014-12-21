@@ -9,7 +9,6 @@ import com.pointswarm.domain.reporting.Report._
 import com.pointswarm.fireLegion.test.MinionTest
 import com.pointswarm.minions.aggregator.ReportAggregator
 import com.scalasourcing.backend.firebase.FirebaseEventStorage
-import org.json4s.jackson.Serialization
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FunSuite, Matchers}
@@ -33,8 +32,6 @@ class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with Mini
         val content = HtmlContent("content")
         val payload = DoReport(content)
         val command = DoAggregateCommand(id, payload)
-
-        println(Serialization.write(command))
 
         val expected = Seq(Added(content))
 

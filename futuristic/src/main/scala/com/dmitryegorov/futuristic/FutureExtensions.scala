@@ -1,5 +1,4 @@
-package com.dmitryegorov.tools.futuristic
-
+package com.dmitryegorov.futuristic
 
 import scala.concurrent._
 import scala.concurrent.duration._

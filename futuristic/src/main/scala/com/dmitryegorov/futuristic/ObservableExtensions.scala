@@ -1,9 +1,11 @@
-package com.dmitryegorov.tools.futuristic
+package com.dmitryegorov.futuristic
 
-import com.dmitryegorov.tools.futuristic.cancellation.CancellationToken
+import java.util.concurrent.CancellationException
+
+import com.dmitryegorov.futuristic.cancellation.CancellationToken
 import rx.lang.scala.Observable
 
-import scala.concurrent._
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object ObservableExtensions
 {
@@ -47,29 +49,13 @@ object ObservableExtensions
         }
 
         def flatMapF[U](f: T => Future[U])(implicit ec: ExecutionContext) = obs.flatMap(x => Observable.from(f(x)))
-
         def concatMapF[U](f: T => Future[U])(implicit ec: ExecutionContext) = obs.concatMap(x => Observable.from(f(x)))
 
-        def countF(p: T => Boolean)(implicit ec: ExecutionContext): Future[Int] =
-        {
-            obs.count(p).firstF
-        }
-
-        def countF(implicit ec: ExecutionContext): Future[Int] =
-        {
-            obs.count(_ => true).firstF
-        }
-
-        def lastOrElseF(default: => T)(implicit ec: ExecutionContext): Future[T] =
-        {
-            obs.lastOrElse(default).firstF
-        }
-
-        def lastOptionF(implicit ec: ExecutionContext): Future[Option[T]] =
-        {
-            obs.lastOption.firstF
-        }
-
+        def await(implicit ec: ExecutionContext): Future[Unit] = obs.lastOptionF.map(_ => ())
+        def countF(p: T => Boolean)(implicit ec: ExecutionContext): Future[Int] = obs.count(p).firstF
+        def countF(implicit ec: ExecutionContext): Future[Int] = obs.count(_ => true).firstF
+        def lastOrElseF(default: => T)(implicit ec: ExecutionContext): Future[T] = obs.lastOrElse(default).firstF
+        def lastOptionF(implicit ec: ExecutionContext): Future[Option[T]] = obs.lastOption.firstF
         def firstF(implicit ec: ExecutionContext): Future[T] =
         {
             val p = Promise[T]()

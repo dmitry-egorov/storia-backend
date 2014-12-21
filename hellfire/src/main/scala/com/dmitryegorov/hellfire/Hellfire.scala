@@ -14,7 +14,7 @@ import scala.concurrent.duration.Duration
 
 object Hellfire
 {
-    implicit class DataSnapshotEx(val ds: DataSnapshot) extends AnyVal
+    implicit class RichDataSnapshot(val ds: DataSnapshot) extends AnyVal
     {
         def value[T : Manifest](implicit f: Formats): Option[T] =
         {
@@ -22,7 +22,7 @@ object Hellfire
         }
     }
 
-    implicit class FirebaseEx(val ref: Firebase) extends AnyVal
+    implicit class RichFirebase(val ref: Firebase) extends AnyVal
     {
         def /(path: Any) = ref.child(path.toString)
         def /(path: String) = ref.child(path)
@@ -114,12 +114,18 @@ object Hellfire
             await(timeout).map(x => x.value[T].get)
         }
 
-        def observeAdded: Observable[Added] =
+        def observeAddedValues[T: Manifest]
+        (implicit f: Formats, ec: ExecutionContext): Observable[T] =
+        {
+            observeAdded.map(x => x.value[T].get)
+        }
+
+        def observeAdded: Observable[DataSnapshot] =
         {
             observe
             .collect
             {
-                case x: Added => x
+                case Added(ds) => ds
             }
         }
 

@@ -1,6 +1,6 @@
 package com.scalasourcing.backend
 
-import com.scalasourcing.backend.firebase.Tools._
+import com.dmitryegorov.futuristic.FutureExtensions._
 import com.scalasourcing.backend.Root.{RootCommand, RootEvent, Id}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}

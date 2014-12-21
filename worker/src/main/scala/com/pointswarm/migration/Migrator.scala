@@ -1,7 +1,7 @@
 package com.pointswarm.migration
 
 import com.dmitryegorov.tools.elastic.Client
-import com.dmitryegorov.tools.futuristic.FutureExtensions._
+import com.dmitryegorov.futuristic.FutureExtensions._
 
 import scala.concurrent._
 

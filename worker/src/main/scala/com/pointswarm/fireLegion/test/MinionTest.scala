@@ -1,7 +1,7 @@
 package com.pointswarm.fireLegion.test
 
 import com.dmitryegorov.hellfire.Hellfire._
-import com.dmitryegorov.tools.futuristic.cancellation.CancellationToken
+import com.dmitryegorov.futuristic.cancellation.CancellationToken
 import com.dmitryegorov.tools.extensions.StringExtensions._
 import com.firebase.client.Firebase
 import com.pointswarm.fireLegion._

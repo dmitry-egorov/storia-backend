@@ -7,6 +7,11 @@ lazy val tools = (project in file("tools")).
                  settings(organization := "com.dmitryegorov", name := "tools", version := "0.0.1").
                  settings(libraryDependencies ++= toolsDependencies)
 
+lazy val futuristic = (project in file("futuristic")).
+                 settings(Commons.settings: _*).
+                 settings(organization := "com.dmitryegorov", name := "futuristic", version := "0.0.1").
+                 settings(libraryDependencies ++= futuristicDependencies)
+
 lazy val hellfire = (project in file("hellfire")).
                     settings(Commons.settings: _*).
                     settings(organization := "com.dmitryegorov", name := "hellfire", version := "0.0.1").
@@ -16,11 +21,11 @@ lazy val scalasourcing = (project in file("scalasourcing")).
                          settings(Commons.settings: _*).
                          settings(organization := "com.scalasourcing", name := "scalasourcing", version := "0.0.1").
                          settings(libraryDependencies ++= scalasourcingDependencies).
-                         dependsOn(hellfire)
+                         dependsOn(hellfire, futuristic)
 
 lazy val worker = (project in file("worker")).
                   settings(Commons.settings: _*).
                   settings(organization := "com.pointswarm", name := "storia-worker", version := "0.0.1").
                   settings(libraryDependencies ++= storiaWorkerDependencies).
-                  dependsOn(scalasourcing, tools, hellfire)
+                  dependsOn(scalasourcing, tools, hellfire, futuristic)
 

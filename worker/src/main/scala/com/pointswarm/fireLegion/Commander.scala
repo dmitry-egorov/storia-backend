@@ -5,9 +5,9 @@ import java.lang.System.err
 import com.firebase.client._
 import com.dmitryegorov.tools.extensions.ThrowableExtensions._
 import com.pointswarm.fireLegion.interfaces.Conqueror
-import com.dmitryegorov.tools.futuristic.FutureExtensions._
-import com.dmitryegorov.tools.futuristic.ObservableExtensions._
-import com.dmitryegorov.tools.futuristic.cancellation.CancellationToken
+import com.dmitryegorov.futuristic.FutureExtensions._
+import com.dmitryegorov.futuristic.ObservableExtensions._
+import com.dmitryegorov.futuristic.cancellation.CancellationToken
 import com.dmitryegorov.hellfire.Hellfire._
 import org.json4s.Formats
 

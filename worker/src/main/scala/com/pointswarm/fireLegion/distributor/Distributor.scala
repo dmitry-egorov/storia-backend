@@ -1,8 +1,8 @@
 package com.pointswarm.fireLegion.distributor
 
 import com.firebase.client.Firebase
-import com.dmitryegorov.tools.futuristic.FutureExtensions._
-import com.dmitryegorov.tools.futuristic.cancellation.CancellationToken
+import com.dmitryegorov.futuristic.FutureExtensions._
+import com.dmitryegorov.futuristic.cancellation.CancellationToken
 import com.pointswarm.fireLegion._
 import com.dmitryegorov.hellfire.Hellfire._
 import org.json4s._

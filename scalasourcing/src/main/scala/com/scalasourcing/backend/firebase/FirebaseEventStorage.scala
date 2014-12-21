@@ -1,9 +1,10 @@
 package com.scalasourcing.backend.firebase
 
+import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client._
 import com.scalasourcing.backend.EventStorage
-import com.scalasourcing.backend.firebase.Tools._
+import com.scalasourcing.backend.firebase.StringExtensions._
 import com.scalasourcing.model.Aggregate._
 import org.json4s.Formats
 

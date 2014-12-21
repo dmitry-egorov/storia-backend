@@ -1,4 +1,4 @@
-package com.dmitryegorov.tools.futuristic.cancellation
+package com.dmitryegorov.futuristic.cancellation
 
 import scala.concurrent._
 

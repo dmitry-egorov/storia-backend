@@ -1,4 +1,4 @@
-package com.dmitryegorov.tools.futuristic.cancellation
+package com.dmitryegorov.futuristic.cancellation
 
 class CancellationSource extends CancellationToken
 {
