@@ -1,22 +1,26 @@
 enablePlugins(JavaAppPackaging)
 
-name := """storia-worker"""
+import Dependencies._
 
-version := "1.0"
+lazy val tools = (project in file("tools")).
+                 settings(Commons.settings: _*).
+                 settings(organization := "com.dmitryegorov", name := "tools", version := "0.0.1").
+                 settings(libraryDependencies ++= toolsDependencies)
 
-scalaVersion := "2.11.4"
+lazy val hellfire = (project in file("hellfire")).
+                    settings(Commons.settings: _*).
+                    settings(organization := "com.dmitryegorov", name := "hellfire", version := "0.0.1").
+                    settings(libraryDependencies ++= hellfireDependencies)
 
-scalacOptions ++= Seq("-feature", "-deprecation", "-language:postfixOps", "-language:implicitConversions")
+lazy val scalasourcing = (project in file("scalasourcing")).
+                         settings(Commons.settings: _*).
+                         settings(organization := "com.scalasourcing", name := "scalasourcing", version := "0.0.1").
+                         settings(libraryDependencies ++= scalasourcingDependencies).
+                         dependsOn(hellfire)
 
-resolvers += "Element Releases" at "http://repo.element.hr/nexus/content/repositories/releases/"
+lazy val worker = (project in file("worker")).
+                  settings(Commons.settings: _*).
+                  settings(organization := "com.pointswarm", name := "storia-worker", version := "0.0.1").
+                  settings(libraryDependencies ++= storiaWorkerDependencies).
+                  dependsOn(scalasourcing, tools, hellfire)
 
-libraryDependencies ++= Seq(
-  "com.firebase" % "firebase-client-jvm" % "2.0.2",
-  "io.reactivex" %% "rxscala" % "0.22.0",
-  "org.json4s" %% "json4s-jackson" % "3.2.11",
-  "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
-  "com.netaporter" %% "scala-uri" % "0.4.3",
-  "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test",
-  "com.github.nscala-time" %% "nscala-time" % "1.6.0",
-  "hr.element.etb" %% "scala-transliteration" % "0.0.1"
-)
