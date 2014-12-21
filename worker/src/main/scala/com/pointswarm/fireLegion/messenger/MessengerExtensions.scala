@@ -16,7 +16,7 @@ object MessengerExtensions
     {
         private lazy val minionsRoot: Firebase = root / "minions"
 
-        def request[TCommand <: AnyRef](name: MinionName, command: TCommand, timeout: Duration = Duration.Inf)(implicit m: Manifest[TCommand])
+        def request[TCommand <: AnyRef : Manifest](name: MinionName, command: TCommand, timeout: Duration = Duration.Inf)
                                        : Future[Option[AnyRef]] =
         {
             for
@@ -27,12 +27,12 @@ object MessengerExtensions
             yield result
         }
 
-        private def sendMessage[TCommand <: AnyRef](command: TCommand)(implicit m: Manifest[TCommand]): Future[String] =
+        private def sendMessage[TCommand <: AnyRef : Manifest](command: TCommand): Future[String] =
         {
             minionsRoot / "distributor" / "inbox" <%- DistributeCommand(command)
         }
 
-        private def awaitResult[TCommand <: AnyRef](name: MinionName, command: TCommand, timeout: Duration, key: String)(implicit m: Manifest[TCommand]): Future[Option[AnyRef]] =
+        private def awaitResult[TCommand <: AnyRef : Manifest](name: MinionName, command: TCommand, timeout: Duration, key: String): Future[Option[AnyRef]] =
         {
             (minionsRoot / name / "results" / key)
             .awaitValue[CommandResult[TCommand]](timeout)

@@ -14,9 +14,9 @@ import org.json4s.Formats
 import scala.concurrent._
 import scala.util._
 
-class Commander[TCommand <: AnyRef]
+class Commander[TCommand <: AnyRef : Manifest]
 (root: Firebase, minion: Minion[TCommand])
-(implicit m: Manifest[TCommand], f: Formats, ec: ExecutionContext)
+(implicit f: Formats, ec: ExecutionContext)
     extends Conqueror
 {
     private lazy val commandName = CommandName[TCommand]

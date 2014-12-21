@@ -14,7 +14,7 @@ object Report extends Aggregate[Report]
 
     case class DoReport(content: HtmlContent) extends Command
 
-    case class Created(originalContent: HtmlContent) extends Event
+    case class Added(originalContent: HtmlContent) extends Event
     case class Edited(newContent: HtmlContent) extends Event
 
     case class ContentIsTheSame() extends Error
@@ -23,13 +23,13 @@ object Report extends Aggregate[Report]
     {
         def apply(event: Event) = event match
         {
-            case Created(content) => ExistingReport(content)
+            case Added(content) => ExistingReport(content)
             case _ => this
         }
 
         def apply(command: Command) = command match
         {
-            case DoReport(content) => Created(content)
+            case DoReport(content) => Added(content)
         }
     }
 

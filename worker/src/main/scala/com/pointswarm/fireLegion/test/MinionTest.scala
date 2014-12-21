@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait MinionTest
 {
-    def execute[Command <: AnyRef : Manifest, Response : Manifest](fb: Firebase, minion: Minion[Command], command: Command)(implicit ec: ExecutionContext, f: Formats): Future[Response] =
+    def execute[Command <: AnyRef : Manifest](fb: Firebase, minion: Minion[Command], command: Command)(implicit ec: ExecutionContext, f: Formats): Future[Unit] =
     {
         val army = Master(fb).recruit(minion).createArmy
 
@@ -20,6 +20,6 @@ trait MinionTest
         val minionRef = fb / "minions" / minion.getClass.getSimpleName.decapitalize
 
         (minionRef / "inbox" / "1" <-- command)
-        .flatMap(_ => (minionRef / "results" / "1" / "data").awaitValue[Response]())
+        .flatMap(_ => (minionRef / "results" / "1" / "data").await().map(_ => ()))
     }
 }

@@ -26,7 +26,7 @@ case class Master(fb: Firebase, summoners: List[Summoner])(implicit ec: Executio
         Army(commanders)
     }
 
-    def recruit[TCommand <: AnyRef](minion: Minion[TCommand])(implicit m: Manifest[TCommand]): Master =
+    def recruit[TCommand <: AnyRef : Manifest](minion: Minion[TCommand]): Master =
     {
         val recruiter = Recruiter[TCommand](minion)
 

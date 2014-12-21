@@ -1,13 +1,13 @@
 package com.pointswarm.application
 
-import com.dmitryegorov.tools.elastic.Client
-import com.pointswarm.fireLegion.ArmyAnnouncer._
-import com.pointswarm.fireLegion._
-import com.dmitryegorov.tools.futuristic.cancellation.CancellationSource
 import com.dmitryegorov.hellfire.Hellfire._
+import com.dmitryegorov.tools.elastic.Client
+import com.dmitryegorov.tools.futuristic.cancellation.CancellationSource
 import com.firebase.client.Firebase
 import com.pointswarm.common.format._
-import com.pointswarm.minions.aggregator.Aggregator
+import com.pointswarm.fireLegion.ArmyAnnouncer._
+import com.pointswarm.fireLegion._
+import com.pointswarm.minions.aggregator.ReportAggregator
 import com.pointswarm.minions.eventStretcher._
 import com.pointswarm.minions.eventViewGenerator.EventViewGenerator
 import com.pointswarm.minions.paparazzi.Paparazzi
@@ -35,16 +35,16 @@ object WorkerApp extends App
     val es = new FirebaseEventStorage(fb / "es")
     val elastic = new Client(WorkerConfig.elasticUrl)
 
-    val searcher = new Searcher(fb, elastic)
-    val elasticAddEvent = new EventStretcher(fb, elastic)
-    val elasticAddReport = new ReportStretcher(fb, elastic)
+    val searcher = new Searcher(elastic)
+    val elasticAddEvent = new EventStretcher(elastic)
+    val elasticAddReport = new ReportStretcher(elastic)
     val eventViewGenerator = new EventViewGenerator(fb)
     val reportViewGenerator = new ReportViewGenerator(fb)
     val reportsSorter = new ReportsSorter(fb)
     val voter = new Voter(fb)
     val registrator = new Registrator(fb)
     val paparazzi = new Paparazzi(fb)
-    val aggregator = new Aggregator(es)
+    val aggregator = new ReportAggregator(es)
 
     val army =
         Master(fb)

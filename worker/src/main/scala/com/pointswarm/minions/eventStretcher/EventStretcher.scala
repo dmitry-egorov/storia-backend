@@ -1,18 +1,17 @@
 package com.pointswarm.minions.eventStretcher
 
 import com.dmitryegorov.tools.elastic._
-import com.pointswarm.fireLegion._
-import com.pointswarm.fireLegion.messenger.SuccessResponse
-import com.firebase.client.Firebase
 import com.pointswarm.commands._
 import com.pointswarm.common.dtos._
 import com.pointswarm.common.views._
+import com.pointswarm.fireLegion._
+import com.pointswarm.fireLegion.messenger.SuccessResponse
 import com.pointswarm.migration.Migrator
 import org.json4s.Formats
 
 import scala.concurrent._
 
-class EventStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand]
+class EventStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand]
 {
     def execute(commandId: CommandId, command: AddEventCommand): Future[AnyRef] =
     {

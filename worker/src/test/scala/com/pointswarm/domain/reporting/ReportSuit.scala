@@ -14,21 +14,21 @@ class ReportSuit extends FunSuite with AggregateBDD[Report]
 
     test("Should be created")
     {
-        given_nothing when_I DoReport(content) then_it_is Created(content)
+        given_nothing when_I DoReport(content) then_it_is Added(content)
     }
 
     test("Should be edited with different content")
     {
-        given it_was Created(content1) when_I DoReport(content2) then_it_is Edited(content2)
+        given it_was Added(content1) when_I DoReport(content2) then_it_is Edited(content2)
     }
 
     test("Should not be edited with the same content")
     {
-        given it_was Created(content) when_I DoReport(content) then_expect ContentIsTheSame()
+        given it_was Added(content) when_I DoReport(content) then_expect ContentIsTheSame()
     }
 
     test("Should be edited with different content for the second time")
     {
-        given it_was Created(content1) and Edited(content2) when_I DoReport(content3) then_it_is Edited(content3)
+        given it_was Added(content1) and Edited(content2) when_I DoReport(content3) then_it_is Edited(content3)
     }
 }

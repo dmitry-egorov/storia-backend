@@ -7,7 +7,7 @@ object SerializationExtensions
 {
     implicit class StringEx(val s: String) extends AnyVal
     {
-        def readAs[T](implicit m: Manifest[T], f: Formats) =
+        def readAs[T : Manifest](implicit f: Formats) =
         {
             Serialization.read[T](s)
         }

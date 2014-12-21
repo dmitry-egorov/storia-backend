@@ -40,7 +40,7 @@ class Client(uri: String)(implicit ec: ExecutionContext)
 
     class SearchDefinition(indexName: String)
     {
-        def `match`[T](fieldName: String, queryText: String)(implicit m: Manifest[T], f: Formats): Future[List[T]] =
+        def `match`[T : Manifest](fieldName: String, queryText: String)(implicit f: Formats): Future[List[T]] =
             Http
             {
                 (postUrl / indexName / "_search")
@@ -95,7 +95,7 @@ object Client
 
     implicit class ClientResponseEx(val response: Response) extends AnyVal
     {
-        def hits[T](implicit m: Manifest[T], f: Formats): List[T] =
+        def hits[T : Manifest](implicit f: Formats): List[T] =
         {
             response
             .getResponseBody

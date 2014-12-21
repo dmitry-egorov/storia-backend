@@ -1,7 +1,6 @@
 package com.pointswarm.minions.reportStreacher
 
 import com.dmitryegorov.tools.elastic._
-import com.firebase.client.Firebase
 import com.pointswarm.commands._
 import com.pointswarm.common.views._
 import com.pointswarm.fireLegion._
@@ -11,7 +10,7 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-class ReportStretcher(fb: Firebase, elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[ReportCommand]
+class ReportStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[ReportCommand]
 {
     def execute(commandId: CommandId, command: ReportCommand): Future[AnyRef] =
     {

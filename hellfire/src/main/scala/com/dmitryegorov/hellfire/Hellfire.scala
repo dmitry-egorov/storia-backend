@@ -16,7 +16,7 @@ object Hellfire
 {
     implicit class DataSnapshotEx(val ds: DataSnapshot) extends AnyVal
     {
-        def value[T](implicit m: Manifest[T], f: Formats): Option[T] =
+        def value[T : Manifest](implicit f: Formats): Option[T] =
         {
             extract(ds.getValue)
         }

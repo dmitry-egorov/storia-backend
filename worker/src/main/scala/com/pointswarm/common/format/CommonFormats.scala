@@ -4,9 +4,7 @@ import com.dmitryegorov.tools.serialization.SingleStringCaseClassSerializer._
 import com.dmitryegorov.tools.serialization._
 import com.pointswarm.commands.ProviderType
 import com.pointswarm.common.dtos._
-import com.pointswarm.domain.reporting.Report
-import com.pointswarm.domain.reporting.Report.{DoReport, Created, Edited}
-import com.pointswarm.domain.voting.Upvote.{Cancelled, Casted}
+import com.pointswarm.domain.reporting.Report.{Added, DoReport, Edited}
 import com.pointswarm.fireLegion._
 import org.json4s._
 import org.json4s.ext.EnumNameSerializer
@@ -19,22 +17,19 @@ object CommonFormats
         override val typeHintFieldName = "t"
     } +
                            ShortTypeHints(List(
-                               classOf[Report.Id],
                                classOf[DoReport],
-                               classOf[Created],
-                               classOf[Edited],
-                               classOf[Casted],
-                               classOf[Cancelled]
+                               classOf[Added],
+                               classOf[Edited]
                            )) +
-                           SingleStringCaseClassSerializer[EventId](x => EventId(x)) +
-                           SingleStringCaseClassSerializer[ReportId](x => ReportId(x)) +
-                           SingleStringCaseClassSerializer[ProfileId](x => ProfileId(x)) +
-                           SingleStringCaseClassSerializer[CommandName](x => CommandName(x)) +
-                           SingleStringCaseClassSerializer[MinionName](x => MinionName(x)) +
-                           SingleStringCaseClassSerializer[HistoryId](x => HistoryId(x)) +
-                           SingleStringCaseClassSerializer[HtmlContent](x => HtmlContent(x)) +
-                           SingleStringCaseClassSerializer[AccountId](x => AccountId(x)) +
-                           SingleStringCaseClassSerializer[Name](x => Name(x)) +
+                           SingleStringCaseClassSerializer[EventId]() +
+                           SingleStringCaseClassSerializer[ReportId]() +
+                           SingleStringCaseClassSerializer[ProfileId]() +
+                           SingleStringCaseClassSerializer[CommandName]() +
+                           SingleStringCaseClassSerializer[MinionName]() +
+                           SingleStringCaseClassSerializer[HistoryId]() +
+                           SingleStringCaseClassSerializer[HtmlContent]() +
+                           SingleStringCaseClassSerializer[AccountId]() +
+                           SingleStringCaseClassSerializer[Name]() +
                            new DateTimeSerializer +
                            new EnumNameSerializer(ProviderType)
 }

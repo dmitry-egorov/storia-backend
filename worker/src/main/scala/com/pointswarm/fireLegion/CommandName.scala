@@ -10,9 +10,9 @@ case class CommandName(value: String)
 
 object CommandName
 {
-    def apply[TCommand](implicit m: Manifest[TCommand]): CommandName =
+    def apply[Command : Manifest]: CommandName =
     {
-        m
+        implicitly[Manifest[Command]]
         .runtimeClass
         .getSimpleName
         .replaceAll("Command", "")
