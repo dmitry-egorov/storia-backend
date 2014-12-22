@@ -9,8 +9,7 @@ import com.pointswarm.common.format.CommonFormats
 import com.pointswarm.domain.reporting.Report._
 import com.pointswarm.domain.reporting.{Report, ReportId}
 import com.pointswarm.fireLegion.test.MinionTest
-import com.scalasourcing.backend.ExecuteCommand
-import com.scalasourcing.backend.firebase.{FirebaseEventStorage, FirebaseExecutor}
+import com.scalasourcing.backend.firebase.{ExecuteCommand, FirebaseEventStorage, FirebaseExecutor}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FunSuite, Matchers}

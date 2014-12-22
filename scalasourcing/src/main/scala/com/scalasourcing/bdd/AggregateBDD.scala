@@ -3,26 +3,28 @@ package com.scalasourcing.bdd
 import com.scalasourcing.model.Aggregate._
 import com.scalasourcing.model._
 
-trait AggregateBDD[AR <: AggregateRoot[AR]]
+trait AggregateBDD[R <: AggregateRoot[R]]
 {
-    def given(implicit f: Factory[AR]): EmptyFlowGiven = EmptyFlowGiven()
-    def given_nothing(implicit f: Factory[AR]): FlowGiven = FlowGiven(f.seed)
+    implicit val agg : Aggregate[R]
 
-    case class EmptyFlowGiven()(implicit f: Factory[AR])
+    def given: EmptyFlowGiven = EmptyFlowGiven()
+    def given_nothing: FlowGiven = FlowGiven(agg.seed)
+
+    case class EmptyFlowGiven()
     {
-        def it_was(events: EventOf[AR]*): FlowGiven = FlowGiven(events mkRoot)
-        def nothing = FlowGiven(f.seed)
+        def it_was(events: agg.Event*): FlowGiven = FlowGiven(events mkRoot)
+        def nothing = FlowGiven(agg.seed)
     }
 
-    case class FlowGiven(state: AR)
+    case class FlowGiven(state: R)
     {
-        def and(events: EventOf[AR]*): FlowGiven = FlowGiven(state + events)
-        def when_I(command: CommandOf[AR]): FlowWhen = FlowWhen(state ! command)
+        def and(events: agg.Event*): FlowGiven = FlowGiven(state + events)
+        def when_I(command: agg.Command): FlowWhen = FlowWhen(state ! command)
     }
 
-    case class FlowWhen(eventsTry: ResultOf[AR])
+    case class FlowWhen(eventsTry: agg.Result)
     {
-        def then_it_is(expected: EventOf[AR]*) =
+        def then_it_is(expected: agg.Event*) =
         {
             eventsTry.fold(
                 events => assert(events == expected, s"Invalid events produced. Expected: $expected. Actual: $events"),
@@ -30,7 +32,7 @@ trait AggregateBDD[AR <: AggregateRoot[AR]]
             )
         }
 
-        def then_expect(expected: ErrorOf[AR]): Unit =
+        def then_expect(expected: agg.Error): Unit =
         {
             eventsTry.fold(
                 events => assert(assertion = false, s"Expected error $expected, but was events: $events"),

@@ -6,6 +6,8 @@ import org.scalatest._
 
 class UpvoteSuite extends FunSuite with Matchers with AggregateBDD[Upvote]
 {
+    override implicit val agg = Upvote
+
     test("An upvote should be casted")
     {
         given_nothing when_I Cast() then_it_is Casted()

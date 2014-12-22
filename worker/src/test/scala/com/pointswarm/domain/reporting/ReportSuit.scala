@@ -7,6 +7,8 @@ import org.scalatest.FunSuite
 
 class ReportSuit extends FunSuite with AggregateBDD[Report]
 {
+    override implicit val agg = Report
+
     val content = HtmlContent("Content")
     val content1 = HtmlContent("Content1")
     val content2 = HtmlContent("Content2")

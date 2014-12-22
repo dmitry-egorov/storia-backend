@@ -1,4 +1,4 @@
-package com.scalasourcing.backend
+package com.scalasourcing.backend.firebase
 
 import com.scalasourcing.model.Aggregate.CommandOf
 
