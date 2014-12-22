@@ -4,7 +4,6 @@ import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
 import com.scalasourcing.backend.EventStorage
-import com.scalasourcing.backend.firebase.StringExtensions._
 import com.scalasourcing.model.Aggregate
 import org.json4s.Formats
 
@@ -19,9 +18,10 @@ object FirebaseEventStorage
         }
     }
 }
+
 abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: Formats) extends EventStorage
 {
-    private lazy val aggregatesRef = fb / "aggregates"
+    private lazy val aggregatesRef = fb / "aggregates" / a.name
 
     def get(id: a.Id): Future[a.EventsSeq] =
     {
@@ -36,6 +36,7 @@ abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionCont
         val ar = aggregateRef(id)
 
         val versionRef = ar / "version"
+        val eventsRef = ar / "events"
 
         versionRef
         .transaction[Int](
@@ -53,7 +54,9 @@ abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionCont
                     {
                         events
                         .zipWithIndex
-                        .map(e => ar / "events" / (expectedVersion + e._2) <-- e._1)
+                        .map(e => {
+                            eventsRef / (expectedVersion + e._2) <-- e._1
+                        })
                         .waitAll
                         .map(_ => true)
                     }
@@ -66,9 +69,6 @@ abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionCont
 
     private def aggregateRef(id: a.Id): Firebase =
     {
-        val name = a.getClass.getSimpleName.replace("$", "").decapitalize
-        val value = id.value
-
-        aggregatesRef / name / value
+        aggregatesRef / id.value
     }
 }

@@ -1,8 +1,12 @@
 package com.scalasourcing.model
 
+import com.scalasourcing.tools.StringExtensions._
+
 trait Aggregate
 {
     def seed: State
+
+    def name = getClass.getSimpleName.replace("$", "").decapitalize
 
     type Id <: AggregateId
     trait Command extends AggregateCommand

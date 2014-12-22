@@ -1,6 +1,7 @@
 package com.scalasourcing.backend
 
-import com.scalasourcing.backend.Tester.SomethingHappened
+import com.scalasourcing.backend.Tester.{DoSomething, SomethingHappened}
+import com.dmitryegorov.futuristic.FutureExtensions._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
@@ -77,8 +78,28 @@ abstract class EventStorageSuite extends FunSuite with Matchers with ScalaFuture
         }
     }
 
-    def createStorage: EventStorage
-        {val a: Tester.type}
+    if (testMultiThreading)
+    {
+        test("Should save all messages from multiple threads")
+        {
+            val es = createStorage
+
+            val times = 5
+            val f =
+                List
+                .fill(times)(DoSomething())
+                .map(c => es.execute(id1, c))
+                .waitAll
+                .flatMap(_ => es.get(id1))
+
+            whenReady(f)
+            {
+                events => events.length should equal(times)
+            }
+        }
+    }
+
+    def createStorage: EventStorage {val a: Tester.type}
 
     def testMultiThreading = true
 }
