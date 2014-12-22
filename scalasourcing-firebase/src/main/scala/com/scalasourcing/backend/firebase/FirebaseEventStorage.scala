@@ -5,30 +5,35 @@ import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
 import com.scalasourcing.backend.EventStorage
 import com.scalasourcing.backend.firebase.StringExtensions._
-import com.scalasourcing.model.Aggregate.AggregateId
-import com.scalasourcing.model.{Aggregate, AggregateRoot}
+import com.scalasourcing.model.Aggregate
 import org.json4s.Formats
 
 import scala.concurrent._
 
-class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: Formats) extends EventStorage
+object FirebaseEventStorage
+{
+    def apply(agg: Aggregate)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): FirebaseEventStorage {val a: agg.type } =
+    {
+        new FirebaseEventStorage(fb) {
+            override val a: agg.type = agg
+        }
+    }
+}
+abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: Formats) extends EventStorage
 {
     private lazy val aggregatesRef = fb / "aggregates"
 
-    def get[R <: AggregateRoot[R]](a: Aggregate[R]): a.Id => Future[a.EventsSeq] =
+    def get(id: a.Id): Future[a.EventsSeq] =
     {
-        id =>
-        (aggregateRef(a, id) / "events")
+        (aggregateRef(id) / "events")
         .value[Seq[AnyRef]]
         .map(x => x.getOrElse(Seq.empty))
         .mapTo[a.EventsSeq]
     }
 
-    def tryPersist[R <: AggregateRoot[R]](a: Aggregate[R]): (a.Id, a.EventsSeq, Int) => Future[Boolean] =
+    def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean] =
     {
-        (id, events, expectedVersion) =>
-
-        val ar = aggregateRef(a, id)
+        val ar = aggregateRef(id)
 
         val versionRef = ar / "version"
 
@@ -59,7 +64,7 @@ class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: F
                 })
     }
 
-    private def aggregateRef[AR <: AggregateRoot[AR]](a: Aggregate[AR], id: AggregateId): Firebase =
+    private def aggregateRef(id: a.Id): Firebase =
     {
         val name = a.getClass.getSimpleName.replace("$", "").decapitalize
         val value = id.value

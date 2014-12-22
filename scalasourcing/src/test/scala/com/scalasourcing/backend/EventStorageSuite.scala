@@ -1,7 +1,6 @@
 package com.scalasourcing.backend
 
-import com.dmitryegorov.futuristic.FutureExtensions._
-import com.scalasourcing.backend.TestRoot.{RootEvent, RootCommand}
+import com.scalasourcing.backend.Tester.SomethingHappened
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
@@ -11,113 +10,75 @@ abstract class EventStorageSuite extends FunSuite with Matchers with ScalaFuture
     implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
     implicit val defaultPatience = PatienceConfig(Span(5, Seconds), Span(100, Millis))
 
-    val id = TestRootId("root0")
-    val id1 = TestRootId("root1")
-    val id2 = TestRootId("root2")
+    val id1 = TesterId("1")
+    val id2 = TesterId("2")
 
-    test("Should return empty events when nothing was added")
+    test("Should return empty messages when nothing was added")
     {
         //given
         val es = createStorage
 
         //when
-        val f = es.get(TestRoot)(id)
+        val f = es.get(id1)
 
         //then
         whenReady(f)
         {
-            _ should be(empty)
+            events => events should be(empty)
         }
     }
 
-    test("Should return persisted events")
+    test("Should return persisted messages")
     {
         //given
         val es = createStorage
 
-        val persistedEvents = Seq(RootEvent())
+        val persistedEvents = Seq(SomethingHappened())
 
-        val f = for
-        {
-            _ <- es.tryPersist(TestRoot)(id, persistedEvents, 0)
-
-            events <- es.get(TestRoot)(id)
-        } yield events
-
-        whenReady(f)
-        {
-            _ should equal(persistedEvents)
-        }
-    }
-
-    test("Should save events twice")
-    {
-        //given
-        val es = createStorage
-
-        val events = Seq(RootEvent())
-
-        val f = for
-        {
-            _ <- es.tryPersist(TestRoot)(id, events, 0)
-            _ <- es.persist(TestRoot)(id, events, events.length)
-
-            events <- es.get(TestRoot)(id)
-        } yield events
-
-        whenReady(f)
-        {
-            _ should equal(events ++ events)
-        }
-    }
-
-    test("Should return persisted events for each aggregate instance")
-    {
-        //given
-        val es = createStorage
-
-        val persistedEvents1 = Seq(RootEvent())
-        val persistedEvents2 = Seq(RootEvent(), RootEvent())
-
-        val f = for
-        {
-            _ <- es.tryPersist(TestRoot)(id1, persistedEvents1, 0)
-            _ <- es.tryPersist(TestRoot)(id2, persistedEvents2, 0)
-
+        val f =
+            es.tryPersist(id1, persistedEvents, 0)
             //when
-            events1 <- es.get(TestRoot)(id1)
-            events2 <- es.get(TestRoot)(id2)
-        } yield (events1, events2)
+            .flatMap(_ => es.get(id1))
 
         //then
         whenReady(f)
-        { (e) =>
-            e._1 should equal(persistedEvents1)
-            e._2 should equal(persistedEvents2)
-        }
-    }
-
-    if (testMultiThreading)
-    {
-        test("Should save all messages from multiple threads")
         {
-            val es = createStorage
-
-            val times = 5
-            val f =
-                List
-                .fill(times)(RootCommand())
-                .map(c => es.execute(TestRoot)(id, c))
-                .waitAll
-                .flatMap(_ => es.get(TestRoot)(id))
-
-            whenReady(f)
-            {
-                events => events.length should equal(times)
-            }
+            events => events should equal(persistedEvents)
         }
     }
+
+    test("Should return persisted messages for each aggregate instance")
+    {
+        //given
+        val es = createStorage
+
+        val persistedEvents1 = Seq(SomethingHappened())
+        val persistedEvents2 = Seq(SomethingHappened(), SomethingHappened())
+
+        val f =
+            for
+            {
+                _ <- es.tryPersist(id1, persistedEvents1, 0)
+                _ <- es.tryPersist(id2, persistedEvents2, 0)
+
+                //when
+                events1 <- es.get(id1)
+                events2 <- es.get(id2)
+            }
+            yield (events1, events2)
+
+
+        //then
+        whenReady(f)
+        {
+            (e) =>
+                e._1 should equal(persistedEvents1)
+                e._2 should equal(persistedEvents2)
+        }
+    }
+
+    def createStorage: EventStorage
+        {val a: Tester.type}
 
     def testMultiThreading = true
-    def createStorage: EventStorage
 }

@@ -7,40 +7,40 @@ import scala.concurrent.{ExecutionContext, Future}
 trait EventStorage
 {
     implicit val ec: ExecutionContext
+    val a : Aggregate
 
-    def get[R <: AggregateRoot[R]](a: Aggregate[R]): (a.Id) => Future[a.EventsSeq]
-    def tryPersist[R <: AggregateRoot[R]](a: Aggregate[R]): (a.Id, a.EventsSeq, Int) => Future[Boolean]
+    def get(id: a.Id): Future[a.EventsSeq]
+    def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean]
 
-    def persist[R <: AggregateRoot[R]](a: Aggregate[R])(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Unit] =
+    def persist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Unit] =
     {
-        tryPersist(a)(id, events, expectedVersion)
+        tryPersist(id, events, expectedVersion)
         .flatMap(
                 committed =>
                     if (committed) Future.successful(())
-                    else persist(a)(id, events, expectedVersion)
+                    else persist(id, events, expectedVersion)
             )
     }
 
-    def execute[R <: AggregateRoot[R]](a: Aggregate[R])(id: a.Id, command: a.Command): Future[a.Result] =
+    def execute(id: a.Id, command: a.Command): Future[a.Result] =
     {
-        tryExecute(a)(id, command)
+        tryExecute(id, command)
         .flatMap(
                 result =>
                     if (result.isDefined) Future.successful(result.get)
-                    else execute(a)(id, command)
+                    else execute(id, command)
             )
     }
 
-    def tryExecute[R <: AggregateRoot[R]](a: Aggregate[R])(id: a.Id, command: a.Command): Future[Option[a.Result]] =
+    def tryExecute(id: a.Id, command: a.Command): Future[Option[a.Result]] =
     {
-        implicit val f = a
         for
         {
-            events <- get(a)(id)
-            result = events ! command
+            events <- get(id)
+            result = a.seed + events ! command
             persisted <- result match
             {
-                case Left(newEvents) => tryPersist(a)(id, newEvents, events.length)
+                case Left(newEvents) => tryPersist(id, newEvents, events.length)
                 case _               => Future.successful(true)
             }
         }

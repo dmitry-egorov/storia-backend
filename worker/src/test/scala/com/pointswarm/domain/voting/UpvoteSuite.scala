@@ -4,9 +4,9 @@ import com.pointswarm.domain.voting.Upvote._
 import com.scalasourcing.bdd.AggregateBDD
 import org.scalatest._
 
-class UpvoteSuite extends FunSuite with Matchers with AggregateBDD[Upvote]
+class UpvoteSuite extends FunSuite with Matchers with AggregateBDD
 {
-    override implicit val agg = Upvote
+    val agg = Upvote
 
     test("An upvote should be casted")
     {

@@ -2,7 +2,7 @@ package com.scalasourcing.backend.firebase
 
 import com.firebase.client.Firebase
 import com.dmitryegorov.hellfire.Hellfire._
-import com.scalasourcing.backend.EventStorageSuite
+import com.scalasourcing.backend.{Tester, EventStorageSuite}
 
 class FirebaseEventStorageSuite extends EventStorageSuite
 {
@@ -18,7 +18,7 @@ class FirebaseEventStorageSuite extends EventStorageSuite
     {
         testIndex += 1
 
-        new FirebaseEventStorage(fb / ("test" + testIndex))
+        FirebaseEventStorage(Tester)(fb / ("test" + testIndex))
     }
 }
 

@@ -3,14 +3,12 @@ package com.pointswarm.domain.reporting
 import com.pointswarm.common.dtos.{EventId, ProfileId, HtmlContent}
 import com.scalasourcing.model._
 
-sealed trait Report extends AggregateRoot[Report]
-
 case class ReportId(userId: ProfileId, eventId: EventId) extends CompositeAggregateId
 {
     val ids = Seq(userId, eventId)
 }
 
-object Report extends Aggregate[Report]
+object Report extends Aggregate
 {
     type Id = ReportId
 
@@ -21,7 +19,7 @@ object Report extends Aggregate[Report]
 
     case class ContentIsTheSame() extends Error
 
-    case class NotExistingReport() extends Report
+    case class NotExistingReport() extends State
     {
         def apply(event: Event) = event match
         {
@@ -35,7 +33,7 @@ object Report extends Aggregate[Report]
         }
     }
 
-    case class ExistingReport(content: HtmlContent) extends Report
+    case class ExistingReport(content: HtmlContent) extends State
     {
         def apply(event: Event) = event match
         {
@@ -55,6 +53,6 @@ object Report extends Aggregate[Report]
         }
     }
 
-    def seed: Report = NotExistingReport()
+    def seed = NotExistingReport()
 
 }

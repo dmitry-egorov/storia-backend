@@ -5,9 +5,9 @@ import com.pointswarm.domain.reporting.Report._
 import com.scalasourcing.bdd.AggregateBDD
 import org.scalatest.FunSuite
 
-class ReportSuit extends FunSuite with AggregateBDD[Report]
+class ReportSuit extends FunSuite with AggregateBDD
 {
-    override implicit val agg = Report
+    val agg = Report
 
     val content = HtmlContent("Content")
     val content1 = HtmlContent("Content1")

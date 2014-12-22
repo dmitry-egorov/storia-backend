@@ -1,19 +1,22 @@
 package com.scalasourcing.backend.firebase
 
 import com.firebase.client.Firebase
-import com.scalasourcing.backend.{CompositeExecutor, EventStorage, Executor}
-import com.scalasourcing.model.{Aggregate, AggregateRoot}
+import com.scalasourcing.backend.{CompositeExecutor, Executor}
+import com.scalasourcing.model.Aggregate
 import org.json4s.Formats
 
 import scala.concurrent.ExecutionContext
 
 case class FirebaseExecutorsBuilder
-(executors: Seq[Executor], fb: Firebase, es: EventStorage)
+(executors: Seq[Executor], fb: Firebase)
 (implicit f: Formats, ec: ExecutionContext)
 {
-    def and[Root <: AggregateRoot[Root] : Manifest: Aggregate](a: Aggregate[Root])(implicit m:Manifest[a.Id]) =
+    def and(agg: Aggregate)(implicit m20: Manifest[agg.type], m21: Manifest[agg.Id], m22: Manifest[agg.Command]) =
     {
-        copy(executors = executors ++ Seq(FirebaseExecutor(a)(fb, es)))
+        val fes = FirebaseEventStorage(agg)(fb)
+        val executor = FirebaseExecutor(agg,fb)(fes)
+
+        copy(executors = executors ++ Seq(executor))
     }
 
     def build: CompositeExecutor = new CompositeExecutor(executors)
@@ -22,6 +25,6 @@ case class FirebaseExecutorsBuilder
 object FirebaseExecutorsBuilder
 {
     def apply
-    (fb: Firebase, es: EventStorage)
-    (implicit f: Formats, ec: ExecutionContext) = new FirebaseExecutorsBuilder(Seq.empty, fb, es)
+    (fb: Firebase)
+    (implicit f: Formats, ec: ExecutionContext) = new FirebaseExecutorsBuilder(Seq.empty, fb)
 }

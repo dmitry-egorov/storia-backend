@@ -23,7 +23,7 @@ import com.pointswarm.minions.reportViewGenerator._
 import com.pointswarm.minions.reportsSorter._
 import com.pointswarm.minions.searcher.Searcher
 import com.pointswarm.minions.voter._
-import com.scalasourcing.backend.firebase.{FirebaseExecutorsBuilder, FirebaseEventStorage}
+import com.scalasourcing.backend.firebase.FirebaseExecutorsBuilder
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -41,7 +41,6 @@ object WorkerApp extends App
     val fb = new Firebase(WorkerConfig.fbUrl)
 
     val dddRef = fb / "es"
-    val es = new FirebaseEventStorage(dddRef)
     val elastic = new Client(WorkerConfig.elasticUrl)
 
     val conquest = runMaster
@@ -93,14 +92,14 @@ object WorkerApp extends App
 
     def runExecutor: Future[Unit] =
     {
-        FirebaseExecutorsBuilder(dddRef, es)
+        FirebaseExecutorsBuilder(dddRef)
         .and(Report)
         .and(Upvote)
         .build
         .run(cancellation)
         .doOnNext
         {
-            case Success(Left(result)) => println(s"Command executed: $result ")
+            case Success(Left(result)) => println(s"Command executed: $result")
             case Success(Right(error)) => err.println(s"Command execution error: $error")
             case Failure(exception)    => err.println(s"Command execution exception: ${exception.fullMessage }")
         }

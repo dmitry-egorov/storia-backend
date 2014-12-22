@@ -4,14 +4,12 @@ import com.pointswarm.common.dtos.ProfileId
 import com.pointswarm.domain.reporting.ReportId
 import com.scalasourcing.model._
 
-sealed trait Upvote extends AggregateRoot[Upvote]
-
 case class UpvoteId(userId: ProfileId, reportId: ReportId) extends CompositeAggregateId
 {
     val ids = Seq(userId, reportId)
 }
 
-object Upvote extends Aggregate[Upvote]
+object Upvote extends Aggregate
 {
     type Id = UpvoteId
     
@@ -24,7 +22,7 @@ object Upvote extends Aggregate[Upvote]
     case class WasAlreadyCastedError() extends Error
     case class WasNotCastedError() extends Error
 
-    case class CastedUpvote() extends Upvote
+    case class CastedUpvote() extends State
     {
         def apply(event: Event) = event match
         {
@@ -39,7 +37,7 @@ object Upvote extends Aggregate[Upvote]
         }
     }
 
-    case class NotCastedUpvote() extends Upvote
+    case class NotCastedUpvote() extends State
     {
         def apply(event: Event) = event match
         {

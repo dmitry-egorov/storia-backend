@@ -1,22 +1,21 @@
 package com.scalasourcing.bdd
 
-import com.scalasourcing.model.Aggregate._
 import com.scalasourcing.model._
 
-trait AggregateBDD[R <: AggregateRoot[R]]
+trait AggregateBDD
 {
-    implicit val agg : Aggregate[R]
+    val agg: Aggregate
 
     def given: EmptyFlowGiven = EmptyFlowGiven()
     def given_nothing: FlowGiven = FlowGiven(agg.seed)
 
     case class EmptyFlowGiven()
     {
-        def it_was(events: agg.Event*): FlowGiven = FlowGiven(events mkRoot)
+        def it_was(events: agg.Event*): FlowGiven = FlowGiven(agg.seed + events)
         def nothing = FlowGiven(agg.seed)
     }
 
-    case class FlowGiven(state: R)
+    case class FlowGiven(state: agg.State)
     {
         def and(events: agg.Event*): FlowGiven = FlowGiven(state + events)
         def when_I(command: agg.Command): FlowWhen = FlowWhen(state ! command)

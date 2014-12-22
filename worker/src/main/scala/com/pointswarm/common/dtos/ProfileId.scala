@@ -1,6 +1,6 @@
 package com.pointswarm.common.dtos
 
-import com.scalasourcing.model.Aggregate.AggregateId
+import com.scalasourcing.model.AggregateId
 
 case class ProfileId(value: String) extends AggregateId
 {

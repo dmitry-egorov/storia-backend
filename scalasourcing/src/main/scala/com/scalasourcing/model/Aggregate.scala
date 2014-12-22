@@ -1,54 +1,40 @@
 package com.scalasourcing.model
 
-import com.scalasourcing.model.Aggregate._
-
-trait Aggregate[Root <: AggregateRoot[Root]] extends Factory[Root]
+trait Aggregate
 {
-    implicit val factory: Factory[Root] = this
-    implicit val aggregate: Aggregate[Root] = this
+    def seed: State
 
     type Id <: AggregateId
-    type Command = CommandOf[Root]
-    type Event = EventOf[Root]
-    type Error = ErrorOf[Root]
-    type EventsSeq = EventsSeqOf[Root]
-    type Result = ResultOf[Root]
-
-    implicit def toRichEventsSeq(events: EventsSeq): RichEventsSeqOf[Root] = new RichEventsSeqOf(events)
+    trait Command extends AggregateCommand
+    trait Event extends AggregateEvent
+    trait Error extends AggregateError
+    type EventsSeq = Seq[Event]
+    type Result = Either[EventsSeq, Error]
 
     implicit protected def ok(event: Event): Result = Left(Seq(event))
     implicit protected def error(error: Error): Result = Right(error)
+
+    trait State
+    {
+        def apply(event: Event): State
+        def apply(command: Command): Result
+
+        def append(event: Event): State = apply(event)
+        def append(events: EventsSeq): State = events.foldLeft(this)((ar, e) => ar + e)
+        def append(result: Result): State = result.fold(events => append(events), error => this)
+        def execute(command: Command): Result = apply(command)
+        def appendResultOf(command: Command): State = append(execute(command))
+
+        def +(event: Event) = append(event)
+        def +(events: EventsSeq) = append(events)
+        def +(result: Result) = append(result)
+        def !(command: Command) = execute(command)
+        def +!(command: Command) = appendResultOf(command)
+    }
 }
 
 object Aggregate
 {
-    trait AggregateCommand
-    trait AggregateEvent
-    trait AggregateError
-    trait AggregateId
-    {
-        def value: String
-        override def toString = value
-    }
-    type AggregateCommandResult = Either[Seq[AggregateEvent], AggregateError]
-
-    trait CommandOf[Root] extends AggregateCommand
-    trait EventOf[Root] extends AggregateEvent
-    trait ErrorOf[Root] extends AggregateError
-
-    type EventsSeqOf[Root] = Seq[EventOf[Root]]
-    type ResultOf[Root] = Either[EventsSeqOf[Root], ErrorOf[Root]]
-    case class StateAndResultOf[Root](state: Root, result: ResultOf[Root])
-
-    trait Factory[Root]
-    {
-        def seed: Root
-    }
-
-    implicit class RichEventsSeqOf[Root <: AggregateRoot[Root]](val events: EventsSeqOf[Root]) extends AnyVal
-    {
-        def mkRoot()(implicit f: Factory[Root]): Root = events.foldLeft(f.seed)((r, e) => r(e))
-
-        def !(command: CommandOf[Root])(implicit f: Factory[Root]): ResultOf[Root] = mkRoot ! command
-    }
+    type AggregateEventsSeq = Seq[AggregateEvent]
+    type AggregateResult = Either[AggregateEventsSeq, AggregateError]
 }

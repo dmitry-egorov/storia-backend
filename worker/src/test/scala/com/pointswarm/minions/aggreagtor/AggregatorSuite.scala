@@ -1,7 +1,7 @@
 package com.pointswarm.minions.aggreagtor
 
-import com.dmitryegorov.futuristic.ObservableExtensions._
 import com.dmitryegorov.futuristic.cancellation.CancellationSource
+import com.dmitryegorov.futuristic.ObservableExtensions._
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
 import com.pointswarm.common.dtos.{EventId, HtmlContent, ProfileId}
@@ -9,7 +9,8 @@ import com.pointswarm.common.format.CommonFormats
 import com.pointswarm.domain.reporting.Report._
 import com.pointswarm.domain.reporting.{Report, ReportId}
 import com.pointswarm.fireLegion.test.MinionTest
-import com.scalasourcing.backend.firebase.{ExecuteCommand, FirebaseEventStorage, FirebaseExecutor}
+import com.scalasourcing.backend.Tester
+import com.scalasourcing.backend.firebase._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FunSuite, Matchers}
@@ -26,8 +27,7 @@ class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with Mini
 
     test("Should execute command")
     {
-        val es = new FirebaseEventStorage(fb)
-        val aggregator = FirebaseExecutor(Report)(fb, es)
+        val executor = FirebaseExecutorsBuilder(fb).and(Report).build
         val source = new CancellationSource()
 
         val id = ReportId(ProfileId("user1"), EventId("event1"))
@@ -36,7 +36,7 @@ class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with Mini
 
         val expected = Seq(Added(content))
 
-        val run = aggregator.run(source).doOnNext(x => println(x)).await
+        val run = executor.run(source).doOnNext(x => println(x)).await
 
         val reportRef = fb / "commands" / "report"
         val commandId = "commandId1"

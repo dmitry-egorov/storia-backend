@@ -1,6 +1,6 @@
 package com.pointswarm.common.dtos
 
-import com.scalasourcing.model.Aggregate.AggregateId
+import com.scalasourcing.model.AggregateId
 
 case class EventId(value: String) extends AggregateId
 {

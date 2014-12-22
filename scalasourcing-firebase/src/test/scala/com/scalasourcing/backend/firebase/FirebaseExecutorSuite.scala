@@ -4,11 +4,12 @@ import com.dmitryegorov.futuristic.ObservableExtensions._
 import com.dmitryegorov.futuristic.cancellation.CancellationSource
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
-import com.scalasourcing.backend.TestRoot.{RootCommand, RootEvent}
-import com.scalasourcing.backend._
+import com.scalasourcing.backend.Tester.{DoSomething, SomethingHappened}
+import com.scalasourcing.backend.{TesterId, Tester}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
+
 
 class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
 {
@@ -17,7 +18,6 @@ class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
     implicit val formats = CommonFormats.formats
 
     val fb = new Firebase("https://storia-test.firebaseio.com/ag")
-    val es = new FirebaseEventStorage(fb)
 
     fb <-- null
 
@@ -25,21 +25,21 @@ class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
 
     test("Should listen and execute commands")
     {
-        val agg = FirebaseExecutor(TestRoot)(fb, es)
+        val fe = FirebaseExecutorsBuilder(fb).and(Tester).build
 
-        val run = agg.run(source).doOnNext(x => println(x)).await
+        val run = fe.run(source).doOnNext(x => println(x)).await
 
-        val rootRef = fb / "commands" / "testRoot"
+        val rootRef = fb / "commands" / "tester"
         val commandId = "commandId1"
-        val rootId = TestRootId("rootId1")
-        val expected = Seq(RootEvent())
+        val rootId = TesterId("rootId1")
+        val expected = Seq(SomethingHappened())
 
         val f =
             for
             {
-                _ <- rootRef / "inbox" / commandId <-- ExecuteCommand(rootId, RootCommand())
-                result <- (rootRef / "results" / commandId).awaitValue[Seq[RootEvent]]()
-                events <- (fb / "aggregates" / "testRoot" / rootId / "events").awaitValue[Seq[RootEvent]]()
+                _ <- rootRef / "inbox" / commandId <-- ExecuteCommand(rootId, DoSomething())
+                result <- (rootRef / "results" / commandId).awaitValue[Seq[SomethingHappened]]()
+                events <- (fb / "aggregates" / "tester" / rootId / "events").awaitValue[Seq[SomethingHappened]]()
             }
             yield (result, events)
 
