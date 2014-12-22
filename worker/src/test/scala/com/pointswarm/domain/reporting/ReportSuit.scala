@@ -5,8 +5,7 @@ import com.pointswarm.domain.reporting.Report._
 import com.scalasourcing.bdd.AggregateBDD
 import org.scalatest.FunSuite
 
-class ReportSuit extends FunSuite with AggregateBDD
-{
+class ReportSuit extends FunSuite with AggregateBDD {
     val agg = Report
 
     val content = HtmlContent("Content")
@@ -14,23 +13,19 @@ class ReportSuit extends FunSuite with AggregateBDD
     val content2 = HtmlContent("Content2")
     val content3 = HtmlContent("Content3")
 
-    test("Should be created")
-    {
-        given_nothing when_I DoReport(content) then_it_is Added(content)
-    }
+    test("Should be created") {
+                                  given_nothing when_I DoReport(content) then_it_is Added(content)
+                              }
 
-    test("Should be edited with different content")
-    {
-        given it_was Added(content1) when_I DoReport(content2) then_it_is Edited(content2)
-    }
+    test("Should be edited with different content") {
+                                                        given it_was Added(content1) when_I DoReport(content2) then_it_is Edited(content2)
+                                                    }
 
-    test("Should not be edited with the same content")
-    {
-        given it_was Added(content) when_I DoReport(content) then_expect ContentIsTheSame()
-    }
+    test("Should not be edited with the same content") {
+                                                           given it_was Added(content) when_I DoReport(content) then_expect ContentIsTheSame()
+                                                       }
 
-    test("Should be edited with different content for the second time")
-    {
-        given it_was Added(content1) and Edited(content2) when_I DoReport(content3) then_it_is Edited(content3)
-    }
+    test("Should be edited with different content for the second time") {
+                                                                            given it_was Added(content1) and Edited(content2) when_I DoReport(content3) then_it_is Edited(content3)
+                                                                        }
 }

@@ -1,8 +1,7 @@
 import sbt.Keys._
 import sbt._
 
-object Commons
-{
+object Commons {
     val settings: Seq[Def.Setting[_]] = Seq(
         scalaVersion := "2.11.4",
         scalacOptions := Seq("-feature", "-deprecation", "-language:postfixOps", "-language:implicitConversions"),

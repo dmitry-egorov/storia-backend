@@ -9,30 +9,25 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-object FirebaseEventStorage
-{
-    def apply(agg: Aggregate)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): FirebaseEventStorage {val a: agg.type } =
-    {
+object FirebaseEventStorage {
+    def apply(agg: Aggregate)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): FirebaseEventStorage {val a: agg.type} = {
         new FirebaseEventStorage(fb) {
             override val a: agg.type = agg
         }
     }
 }
 
-abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: Formats) extends EventStorage
-{
+abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: Formats) extends EventStorage {
     private lazy val aggregatesRef = fb / "aggregates" / a.name
 
-    def get(id: a.Id): Future[a.EventsSeq] =
-    {
+    def get(id: a.Id): Future[a.EventsSeq] = {
         (aggregateRef(id) / "events")
         .value[Seq[AnyRef]]
         .map(x => x.getOrElse(Seq.empty))
         .mapTo[a.EventsSeq]
     }
 
-    def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean] =
-    {
+    def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean] = {
         val ar = aggregateRef(id)
 
         val versionRef = ar / "version"
@@ -40,18 +35,15 @@ abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionCont
 
         versionRef
         .transaction[Int](
-                version =>
-                {
+                version => {
                     val v = version.getOrElse(0)
                     val newVersion = v + (events.length: java.lang.Integer)
 
                     if (v == expectedVersion) Some(newVersion) else None
                 })
         .flatMap(
-                committed =>
-                {
-                    if (committed)
-                    {
+                committed => {
+                    if (committed) {
                         events
                         .zipWithIndex
                         .map(e => {
@@ -60,15 +52,13 @@ abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionCont
                         .waitAll
                         .map(_ => true)
                     }
-                    else
-                    {
+                    else {
                         Future.successful(false)
                     }
                 })
     }
 
-    private def aggregateRef(id: a.Id): Firebase =
-    {
+    private def aggregateRef(id: a.Id): Firebase = {
         aggregatesRef / id.value
     }
 }

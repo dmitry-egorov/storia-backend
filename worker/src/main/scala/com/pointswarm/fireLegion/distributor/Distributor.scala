@@ -1,27 +1,24 @@
 package com.pointswarm.fireLegion.distributor
 
-import com.firebase.client.Firebase
 import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.futuristic.cancellation.CancellationToken
-import com.pointswarm.fireLegion._
 import com.dmitryegorov.hellfire.Hellfire._
+import com.firebase.client.Firebase
+import com.pointswarm.fireLegion._
 import org.json4s._
 
 import scala.concurrent._
 
-class Distributor(root: Firebase)(implicit ec: ExecutionContext, f: Formats) extends Minion[DistributeCommand]
-{
+class Distributor(root: Firebase)(implicit ec: ExecutionContext, f: Formats) extends Minion[DistributeCommand] {
     private val mapper = new CommandsMapper(root / "minionsMap")
 
-    override def prepare: Future[Unit] =
-    {
+    override def prepare: Future[Unit] = {
         mapper.prepare
     }
 
     override def conquer(completeWith: CancellationToken): Future[Int] = mapper.run(completeWith)
 
-    def execute(id: CommandId, command: DistributeCommand): Future[DistributedResponse] =
-    {
+    def execute(id: CommandId, command: DistributeCommand): Future[DistributedResponse] = {
         val currentMap = mapper.getCurrentMap
 
         val name = command.name
@@ -37,8 +34,7 @@ class Distributor(root: Firebase)(implicit ec: ExecutionContext, f: Formats) ext
         .map(_ => DistributedResponse(minions))
     }
 
-    private def send(id: CommandId, command: AnyRef, name: MinionName): Future[String] =
-    {
+    private def send(id: CommandId, command: AnyRef, name: MinionName): Future[String] = {
         root / "minions" / name / "inbox" / id <-- command
     }
 }

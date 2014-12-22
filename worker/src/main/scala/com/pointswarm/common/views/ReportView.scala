@@ -10,8 +10,7 @@ case class ReportView
     authorId: ProfileId,
     eventId: EventId,
     upvotedBy: Option[Map[ProfileId, Boolean]]
-    )
-{
+    ) {
     assert(content != null)
     assert(addedOn != null)
     assert(authorId != null)

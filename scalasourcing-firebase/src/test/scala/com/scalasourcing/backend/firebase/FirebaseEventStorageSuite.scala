@@ -1,11 +1,10 @@
 package com.scalasourcing.backend.firebase
 
-import com.firebase.client.Firebase
 import com.dmitryegorov.hellfire.Hellfire._
-import com.scalasourcing.backend.{Tester, EventStorageSuite}
+import com.firebase.client.Firebase
+import com.scalasourcing.backend.{EventStorageSuite, Tester}
 
-class FirebaseEventStorageSuite extends EventStorageSuite
-{
+class FirebaseEventStorageSuite extends EventStorageSuite {
     implicit val formats = CommonFormats.formats
 
     private val fb = new Firebase("https://scalasourcing.firebaseio.com/es")
@@ -14,8 +13,7 @@ class FirebaseEventStorageSuite extends EventStorageSuite
 
     var testIndex = 0
 
-    override def createStorage =
-    {
+    override def createStorage = {
         testIndex += 1
 
         FirebaseEventStorage(Tester)(fb / ("test" + testIndex))

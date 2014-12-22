@@ -7,17 +7,14 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-object Master
-{
+object Master {
     def apply(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): Master = Master(fb, Nil)
 }
 
-case class Master(fb: Firebase, summoners: List[Summoner])(implicit ec: ExecutionContext, f: Formats)
-{
+case class Master(fb: Firebase, summoners: List[Summoner])(implicit ec: ExecutionContext, f: Formats) {
     def recruitDistributor = recruit(new Distributor(fb))
 
-    def createArmy(implicit ec: ExecutionContext, f: Formats): Army =
-    {
+    def createArmy(implicit ec: ExecutionContext, f: Formats): Army = {
         val commanders =
             summoners
             .map(c => c.summonConqueror(fb))
@@ -26,8 +23,7 @@ case class Master(fb: Firebase, summoners: List[Summoner])(implicit ec: Executio
         Army(commanders)
     }
 
-    def recruit[TCommand <: AnyRef : Manifest](minion: Minion[TCommand]): Master =
-    {
+    def recruit[TCommand <: AnyRef : Manifest](minion: Minion[TCommand]): Master = {
         val recruiter = Recruiter[TCommand](minion)
 
         val newRecruiters = recruiter :: summoners

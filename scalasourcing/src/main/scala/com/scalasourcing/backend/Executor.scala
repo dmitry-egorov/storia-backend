@@ -6,7 +6,6 @@ import rx.lang.scala.Observable
 
 import scala.util.Try
 
-trait Executor
-{
+trait Executor {
     def run(completeWith: CancellationToken): Observable[Try[AggregateResult]]
 }

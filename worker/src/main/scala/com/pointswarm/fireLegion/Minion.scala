@@ -5,8 +5,7 @@ import com.pointswarm.fireLegion.interfaces.Conqueror
 
 import scala.concurrent._
 
-abstract class Minion[TCommand <: AnyRef](implicit ec: ExecutionContext) extends Conqueror
-{
+abstract class Minion[TCommand <: AnyRef](implicit ec: ExecutionContext) extends Conqueror {
     def execute(commandId: CommandId, command: TCommand): Future[AnyRef]
 
     def prepare: Future[Unit] = Future.successful(())

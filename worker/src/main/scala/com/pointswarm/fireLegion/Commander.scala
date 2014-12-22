@@ -2,13 +2,13 @@ package com.pointswarm.fireLegion
 
 import java.lang.System.err
 
-import com.firebase.client._
-import com.dmitryegorov.tools.extensions.ThrowableExtensions._
-import com.pointswarm.fireLegion.interfaces.Conqueror
 import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.futuristic.ObservableExtensions._
 import com.dmitryegorov.futuristic.cancellation.CancellationToken
 import com.dmitryegorov.hellfire.Hellfire._
+import com.dmitryegorov.tools.extensions.ThrowableExtensions._
+import com.firebase.client._
+import com.pointswarm.fireLegion.interfaces.Conqueror
 import org.json4s.Formats
 
 import scala.concurrent._
@@ -17,8 +17,7 @@ import scala.util._
 class Commander[TCommand <: AnyRef : Manifest]
 (root: Firebase, minion: Minion[TCommand])
 (implicit f: Formats, ec: ExecutionContext)
-    extends Conqueror
-{
+    extends Conqueror {
     private lazy val commandName = CommandName[TCommand]
     private lazy val minionName = MinionName(minion)
 
@@ -27,16 +26,14 @@ class Commander[TCommand <: AnyRef : Manifest]
     private lazy val resultsRoot = minionRoot / "results"
     private lazy val minionMapKeyRoot = root / "minionsMap" / minionName
 
-    def prepare: Future[Unit] =
-    {
+    def prepare: Future[Unit] = {
         val prepare = minion.prepare
         val distribution = subscribeForDistribution
 
         List(prepare, distribution).waitAll
     }
 
-    def conquer(completeWith: CancellationToken): Future[Int] =
-    {
+    def conquer(completeWith: CancellationToken): Future[Int] = {
         val minionsRun = minion.conquer(completeWith)
 
         val myRun =
@@ -49,14 +46,12 @@ class Commander[TCommand <: AnyRef : Manifest]
         List(minionsRun, myRun).whenAll.map(l => l.drop(1).head)
     }
 
-    private def execute(ds: DataSnapshot): Future[Unit] =
-    {
+    private def execute(ds: DataSnapshot): Future[Unit] = {
         val id = CommandId(ds.getKey)
         val commandTry = Try(ds.value[TCommand].get)
 
         val responseFuture =
-            for
-            {
+            for {
                 c <- commandTry.asFuture
                 _ = logCommandReceived(id, c)
 
@@ -81,15 +76,12 @@ class Commander[TCommand <: AnyRef : Manifest]
     private def subscribeForDistribution: Future[String] =
         minionMapKeyRoot <-- commandName
 
-    private def logCommandReceived(commandId: CommandId, command: TCommand)
-    {
+    private def logCommandReceived(commandId: CommandId, command: TCommand) {
         println(s"Command recieved by $minionName: $commandId, $command")
     }
 
-    private def logExecuted(commandId: CommandId, result: Try[AnyRef])
-    {
-        result match
-        {
+    private def logExecuted(commandId: CommandId, result: Try[AnyRef]) {
+        result match {
             case Success(response)  =>
                 println(s"Command $commandName '$commandId' executed by $minionName: $response")
             case Failure(exception) =>

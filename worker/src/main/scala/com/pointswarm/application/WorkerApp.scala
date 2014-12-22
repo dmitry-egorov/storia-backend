@@ -29,8 +29,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-object WorkerApp extends App
-{
+object WorkerApp extends App {
     println("A new Master is born...")
 
     implicit val formats = CommonFormats.formats
@@ -48,8 +47,7 @@ object WorkerApp extends App
 
     val run = Seq(conquest, executorRun).waitAll
 
-    sys addShutdownHook
-    {
+    sys addShutdownHook {
         cancellation.cancel()
 
         Await.result(conquest, 10 seconds)
@@ -57,8 +55,7 @@ object WorkerApp extends App
 
     Await.result(conquest, Duration.Inf)
 
-    def runMaster: Future[Unit] =
-    {
+    def runMaster: Future[Unit] = {
         val searcher = new Searcher(elastic)
         val elasticAddEvent = new EventStretcher(elastic)
         val elasticAddReport = new ReportStretcher(elastic)
@@ -83,26 +80,24 @@ object WorkerApp extends App
             .recruit(paparazzi)
             .createArmy.withAnnouncer
 
-        for
-        {
+        for {
             _ <- army.prepare
             _ <- army.conquer(cancellation)
         } yield ()
     }
 
-    def runExecutor: Future[Unit] =
-    {
+    def runExecutor: Future[Unit] = {
         FirebaseExecutorsBuilder(dddRef)
         .and(Report)
         .and(Upvote)
         .build
         .run(cancellation)
-        .doOnNext
-        {
-            case Success(Left(result)) => println(s"Command executed: $result")
-            case Success(Right(error)) => err.println(s"Command execution error: $error")
-            case Failure(exception)    => err.println(s"Command execution exception: ${exception.fullMessage }")
-        }
+        .doOnNext {
+                      case Success(Left(result)) => println(s"Command executed: $result")
+                      case Success(Right(error)) => err.println(s"Command execution error: $error")
+                      case Failure(exception)    => err
+                                                    .println(s"Command execution exception: ${exception.fullMessage }")
+                  }
         .await
     }
 }

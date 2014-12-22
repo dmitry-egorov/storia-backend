@@ -2,26 +2,23 @@ package com.dmitryegorov.tools.elastic
 
 import java.nio.charset.StandardCharsets
 
-import com.netaporter.uri.Uri
-import com.ning.http.client._
 import com.dmitryegorov.tools.elastic.Client._
 import com.dmitryegorov.tools.extensions.SerializationExtensions._
+import com.netaporter.uri.Uri
+import com.ning.http.client._
 import dispatch.{Http, url}
 import org.json4s.Formats
 
 import scala.concurrent._
 
-class Client(uri: String)(implicit ec: ExecutionContext)
-{
-    private lazy val baseUrl =
-    {
+class Client(uri: String)(implicit ec: ExecutionContext) {
+    private lazy val baseUrl = {
         val withoutAuth = url(uri)
 
         val parsed = Uri.parse(uri)
 
         val withAuth =
-            for
-            {
+            for {
                 name <- parsed.user
                 pass <- parsed.password
             }
@@ -38,65 +35,54 @@ class Client(uri: String)(implicit ec: ExecutionContext)
     def index(indexName: String): IndexDefinition = new IndexDefinition(indexName)
 
 
-    class SearchDefinition(indexName: String)
-    {
-        def `match`[T : Manifest](fieldName: String, queryText: String)(implicit f: Formats): Future[List[T]] =
-            Http
-            {
-                (postUrl / indexName / "_search")
-                .setBody( s"""{"query" : {"match" : { "$fieldName" : "$queryText" }}}""".getBytes(StandardCharsets.UTF_8))
-            }
+    class SearchDefinition(indexName: String) {
+        def `match`[T: Manifest](fieldName: String, queryText: String)(implicit f: Formats): Future[List[T]] =
+            Http {
+                     (postUrl / indexName / "_search")
+                     .setBody( s"""{"query" : {"match" : { "$fieldName" : "$queryText" }}}"""
+                               .getBytes(StandardCharsets.UTF_8))
+                 }
             .ensureOk
             .map(_.hits[T])
     }
 
-    class IndexDefinition(indexName: String)
-    {
-        def create(): Future[Response] =
-        {
-            Http
-            {
-                postUrl / indexName
-            }
+    class IndexDefinition(indexName: String) {
+        def create(): Future[Response] = {
+            Http {
+                     postUrl / indexName
+                 }
             .ensureOk
         }
 
-        def doc(indexType: String, id: String, doc: AnyRef)(implicit f: Formats): Future[Response] =
-        {
-            Http
-            {
-                (postUrl / indexName / indexType / id)
-                .setBody(doc.toJson)
-            }
+        def doc(indexType: String, id: String, doc: AnyRef)(implicit f: Formats): Future[Response] = {
+            Http {
+                     (postUrl / indexName / indexType / id)
+                     .setBody(doc.toJson)
+                 }
             .ensureOk
         }
 
-        def exists: Future[Boolean] =
-        {
-            Http
-            {
-                (baseUrl / indexName )
-                .HEAD
-            }
+        def exists: Future[Boolean] = {
+            Http {
+                     (baseUrl / indexName)
+                     .HEAD
+                 }
             .map(_.getStatusCode == 200)
         }
     }
 }
 
 
-object Client
-{
+object Client {
+
     import com.dmitryegorov.tools.extensions.HttpExtensions._
 
-    implicit class ResponseFutureEx(val response: Future[Response]) extends AnyVal
-    {
+    implicit class ResponseFutureEx(val response: Future[Response]) extends AnyVal {
         def ensureOk(implicit ec: ExecutionContext) = response.map(x => x.assertOk)
     }
 
-    implicit class ClientResponseEx(val response: Response) extends AnyVal
-    {
-        def hits[T : Manifest](implicit f: Formats): List[T] =
-        {
+    implicit class ClientResponseEx(val response: Response) extends AnyVal {
+        def hits[T: Manifest](implicit f: Formats): List[T] = {
             response
             .getResponseBody
             .readAs[ElasticResponse[T]]
