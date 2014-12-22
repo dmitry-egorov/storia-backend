@@ -18,7 +18,8 @@ class ReportsSorter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) ext
     private lazy val eventsRoot: Firebase = fb / "events"
 
     def execute(commandId: CommandId, command: SortReportsCommand): Future[AnyRef] = {
-        for {
+        for
+        {
             eventId <- findEventId(command)
             reportIds <- getReportIdsOf(eventId)
             reports <- getReports(reportIds)
@@ -32,7 +33,8 @@ class ReportsSorter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) ext
     }
 
     def findEventId(command: SortReportsCommand): Future[EventId] = {
-        command.eventId match {
+        command.eventId match
+        {
             case Some(id) => Future.successful(id)
             case None     => getReportsEventId(command.reportId.get)
         }

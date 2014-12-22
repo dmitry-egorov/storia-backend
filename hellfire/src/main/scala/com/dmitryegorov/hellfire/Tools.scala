@@ -11,7 +11,8 @@ import scala.concurrent.duration.Duration
 
 object Tools {
     implicit class RichJValue(val cc: JValue) extends AnyVal {
-        def toJava: AnyRef = cc match {
+        def toJava: AnyRef = cc match
+        {
             case JString(value)  => value
             case JBool(value)    => value: java.lang.Boolean
             case JDecimal(value) => value
@@ -26,7 +27,8 @@ object Tools {
 
     implicit class RichAny(val cc: Any) extends AnyVal {
         def fromJavaToJValue: JValue = {
-            cc match {
+            cc match
+            {
                 case l: util.ArrayList[_]       => JArray(l.map(i => i.fromJavaToJValue).toList)
                 case l: Array[_]                => JArray(l.map(i => i.fromJavaToJValue).toList)
                 case m: java.util.HashMap[_, _] => new JObject(m.toList
@@ -60,7 +62,8 @@ object Tools {
     private def timeoutFail[T](duration: Duration)(implicit ec: ExecutionContext): Future[T] = {
         val p = Promise[T]()
 
-        if (duration != Duration.Inf) {
+        if (duration != Duration.Inf)
+        {
             timer.schedule(new java.util.TimerTask {
                 def run() {
                     p.failure(new TimeoutException)

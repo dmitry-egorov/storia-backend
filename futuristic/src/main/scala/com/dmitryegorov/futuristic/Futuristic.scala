@@ -11,7 +11,8 @@ object Futuristic {
     def timeoutFail[T](duration: Duration)(implicit ec: ExecutionContext): Future[T] = {
         val p = Promise[T]()
 
-        if (duration != Duration.Inf) {
+        if (duration != Duration.Inf)
+        {
             timer.schedule(new java.util.TimerTask {
                 def run() {
                     p.failure(new TimeoutException)
@@ -24,7 +25,8 @@ object Futuristic {
 
     def timeout[T](value: T, duration: Duration)(implicit ec: ExecutionContext): Future[T] = {
         val p = Promise[T]()
-        if (duration != Duration.Inf) {
+        if (duration != Duration.Inf)
+        {
             timer.schedule(new java.util.TimerTask {
                 def run() {
                     p.success(value)

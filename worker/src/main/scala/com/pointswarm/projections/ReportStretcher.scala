@@ -12,7 +12,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ReportStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Projection[ReportId] {
     def consume(id: Report.Id, event: AggregateEvent): Future[Unit] = {
-        val content = event match {
+        val content = event match
+        {
             case Added(c)  => c
             case Edited(c) => c
         }

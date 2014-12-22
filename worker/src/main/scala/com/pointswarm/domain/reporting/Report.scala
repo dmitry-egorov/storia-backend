@@ -18,23 +18,27 @@ object Report extends Aggregate {
     case class ContentIsTheSame() extends Error
 
     case class NotExistingReport() extends State {
-        def apply(event: Event) = event match {
+        def apply(event: Event) = event match
+        {
             case Added(content) => ExistingReport(content)
             case _              => this
         }
 
-        def apply(command: Command) = command match {
+        def apply(command: Command) = command match
+        {
             case DoReport(content) => Added(content)
         }
     }
 
     case class ExistingReport(content: HtmlContent) extends State {
-        def apply(event: Event) = event match {
+        def apply(event: Event) = event match
+        {
             case Edited(newContent) => copy(newContent)
             case _                  => this
         }
 
-        def apply(command: Command) = command match {
+        def apply(command: Command) = command match
+        {
             case DoReport(newContent) => edit(newContent)
         }
 

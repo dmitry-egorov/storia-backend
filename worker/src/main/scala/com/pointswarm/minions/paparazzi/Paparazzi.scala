@@ -19,7 +19,8 @@ class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
     private lazy val profilesRoot: Firebase = root / "profiles"
 
     override def execute(commandId: CommandId, command: FindSocialPictureCommand): Future[AnyRef] = {
-        for {
+        for
+        {
             imageUrl <- findProfileImageUrl(command.provider, command.providerUid)
             a <- setProfileImage(command.profileId, imageUrl)
         } yield SuccessResponse
@@ -31,7 +32,8 @@ class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
     }
 
     private def findProfileImageUrl(provider: ProviderType, providerUid: String): Future[String] = {
-        provider match {
+        provider match
+        {
             case Facebook => getFacebookImageUrl(providerUid)
             case Google   => getGoogleImageUrl(providerUid)
             case _        => Future.successful(defaultImageUrl)
@@ -45,21 +47,24 @@ class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
     private def getGoogleImageUrl(userId: String): Future[String] = {
         Http(url(s"http://picasaweb.google.com/data/entry/api/user/$userId?alt=json"))
         .map(data => getUrlFromGoogleResponse(data))
-        .recover {
-                     case _ => defaultImageUrl
-                 }
+        .recover
+        {
+            case _ => defaultImageUrl
+        }
     }
 
     private def getUrlFromGoogleResponse(data: Response): String = {
         val jvalue = dyn(parse(data.getResponseBody)).entry.gphoto$thumbnail.$t.raw
 
-        jvalue match {
+        jvalue match
+        {
             case JString(value) => value
             case _              => defaultImageUrl
         }
     }
 
-    private lazy val defaultImageUrl: String = {
+    private lazy val defaultImageUrl: String =
+    {
         "http://pointswarm.com/img/anonymous.png"
     }
 }

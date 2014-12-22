@@ -4,7 +4,8 @@ import org.scalatest._
 
 class ExampleSpec extends FlatSpec with Matchers {
 
-    "Observables" should "work" in {
+    "Observables" should "work" in
+    {
         //        val cancellation = new CancellationSource
         //
         //        val f =

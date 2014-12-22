@@ -30,10 +30,12 @@ trait EventStorage {
     }
 
     def tryExecute(id: a.Id, command: a.Command): Future[Option[a.Result]] = {
-        for {
+        for
+        {
             events <- get(id)
             result = a.seed + events ! command
-            persisted <- result match {
+            persisted <- result match
+            {
                 case Left(newEvents) => tryPersist(id, newEvents, events.length)
                 case _               => Future.successful(true)
             }

@@ -18,10 +18,11 @@ class ArmyAnnouncer(conqueror: Conqueror)(implicit ec: ExecutionContext) extends
 
         completeWith.whenCancelled(() => println("Retreating..."))
 
-        conqueror.conquer(completeWith).andThen {
-                                                    case Success(total) => println(s"Retreated. Total of $total commands executed.")
-                                                    case Failure(cause) => println(s"Something went very wrong while retreating, the whole army is dead: $cause")
-                                                }
+        conqueror.conquer(completeWith).andThen
+        {
+            case Success(total) => println(s"Retreated. Total of $total commands executed.")
+            case Failure(cause) => println(s"Something went very wrong while retreating, the whole army is dead: $cause")
+        }
     }
 }
 

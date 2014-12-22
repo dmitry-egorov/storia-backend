@@ -10,7 +10,8 @@ import org.json4s.Formats
 import scala.concurrent._
 
 object FirebaseEventStorage {
-    def apply(agg: Aggregate)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): FirebaseEventStorage {val a: agg.type} = {
+    def apply(agg: Aggregate)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): FirebaseEventStorage
+        {val a: agg.type} = {
         new FirebaseEventStorage(fb) {
             override val a: agg.type = agg
         }
@@ -35,24 +36,29 @@ abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionCont
 
         versionRef
         .transaction[Int](
-                version => {
+                version =>
+                {
                     val v = version.getOrElse(0)
                     val newVersion = v + (events.length: java.lang.Integer)
 
                     if (v == expectedVersion) Some(newVersion) else None
                 })
         .flatMap(
-                committed => {
-                    if (committed) {
+                committed =>
+                {
+                    if (committed)
+                    {
                         events
                         .zipWithIndex
-                        .map(e => {
-                            eventsRef / (expectedVersion + e._2) <-- e._1
-                        })
+                        .map(e =>
+                             {
+                                 eventsRef / (expectedVersion + e._2) <-- e._1
+                             })
                         .waitAll
                         .map(_ => true)
                     }
-                    else {
+                    else
+                    {
                         Future.successful(false)
                     }
                 })

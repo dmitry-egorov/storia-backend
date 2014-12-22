@@ -23,37 +23,42 @@ class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with Mini
 
     fb <-- null
 
-    test("Should execute command") {
-                                       val executor = FirebaseExecutorsBuilder(fb).and(Report).build
-                                       val source = new CancellationSource()
+    test("Should execute command")
+    {
+        val executor = FirebaseExecutorsBuilder(fb).and(Report).build
+        val source = new CancellationSource()
 
-                                       val id = ReportId(ProfileId("user1"), EventId("event1"))
-                                       val content = HtmlContent("content")
-                                       val payload = DoReport(content)
+        val id = ReportId(ProfileId("user1"), EventId("event1"))
+        val content = HtmlContent("content")
+        val payload = DoReport(content)
 
-                                       val expected = Seq(Added(content))
+        val expected = Seq(Added(content))
 
-                                       val run = executor.run(source).doOnNext(x => println(x)).await
+        val run = executor.run(source).doOnNext(x => println(x)).await
 
-                                       val reportRef = fb / "commands" / "report"
-                                       val commandId = "commandId1"
+        val reportRef = fb / "commands" / "report"
+        val commandId = "commandId1"
 
-                                       val f =
-                                           for {
-                                               _ <- reportRef / "inbox" / commandId <-- ExecuteCommand(id, payload)
-                                               result <- (reportRef / "results" / commandId).awaitValue[Seq[Added]]()
-                                               events <- (fb / "aggregates" / "report" / id.value / "events")
-                                                         .awaitValue[Seq[Added]]()
-                                           }
-                                           yield (result, events)
+        val f =
+            for
+            {
+                _ <- reportRef / "inbox" / commandId <-- ExecuteCommand(id, payload)
+                result <- (reportRef / "results" / commandId).awaitValue[Seq[Added]]()
+                events <- (fb / "aggregates" / "report" / id.value / "events")
+                          .awaitValue[Seq[Added]]()
+            }
+            yield (result, events)
 
-                                       whenReady(f) {
-                                                        t => {
-                                                            t._1 should equal(expected)
-                                                            t._2 should equal(expected)
-                                                            source.cancel()
-                                                            whenReady(run) { _ => () }
-                                                        }
-                                                    }
-                                   }
+        whenReady(f)
+        {
+            t =>
+            {
+                t._1 should equal(expected)
+                t._2 should equal(expected)
+                source.cancel()
+                whenReady(run)
+                { _ => () }
+            }
+        }
+    }
 }

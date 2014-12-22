@@ -12,13 +12,15 @@ import org.json4s.Formats
 import scala.concurrent._
 
 class Client(uri: String)(implicit ec: ExecutionContext) {
-    private lazy val baseUrl = {
+    private lazy val baseUrl =
+    {
         val withoutAuth = url(uri)
 
         val parsed = Uri.parse(uri)
 
         val withAuth =
-            for {
+            for
+            {
                 name <- parsed.user
                 pass <- parsed.password
             }
@@ -37,36 +39,40 @@ class Client(uri: String)(implicit ec: ExecutionContext) {
 
     class SearchDefinition(indexName: String) {
         def `match`[T: Manifest](fieldName: String, queryText: String)(implicit f: Formats): Future[List[T]] =
-            Http {
-                     (postUrl / indexName / "_search")
-                     .setBody( s"""{"query" : {"match" : { "$fieldName" : "$queryText" }}}"""
-                               .getBytes(StandardCharsets.UTF_8))
-                 }
+            Http
+            {
+                (postUrl / indexName / "_search")
+                .setBody( s"""{"query" : {"match" : { "$fieldName" : "$queryText" }}}"""
+                          .getBytes(StandardCharsets.UTF_8))
+            }
             .ensureOk
             .map(_.hits[T])
     }
 
     class IndexDefinition(indexName: String) {
         def create(): Future[Response] = {
-            Http {
-                     postUrl / indexName
-                 }
+            Http
+            {
+                postUrl / indexName
+            }
             .ensureOk
         }
 
         def doc(indexType: String, id: String, doc: AnyRef)(implicit f: Formats): Future[Response] = {
-            Http {
-                     (postUrl / indexName / indexType / id)
-                     .setBody(doc.toJson)
-                 }
+            Http
+            {
+                (postUrl / indexName / indexType / id)
+                .setBody(doc.toJson)
+            }
             .ensureOk
         }
 
         def exists: Future[Boolean] = {
-            Http {
-                     (baseUrl / indexName)
-                     .HEAD
-                 }
+            Http
+            {
+                (baseUrl / indexName)
+                .HEAD
+            }
             .map(_.getStatusCode == 200)
         }
     }

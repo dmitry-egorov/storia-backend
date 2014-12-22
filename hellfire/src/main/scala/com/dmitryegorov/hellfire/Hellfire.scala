@@ -91,9 +91,10 @@ object Hellfire {
 
             ref.addValueEventListener(listener)
 
-            p.future.timeout(timeout).andThen {
-                                                  case _ => ref.removeEventListener(listener)
-                                              }
+            p.future.timeout(timeout).andThen
+            {
+                case _ => ref.removeEventListener(listener)
+            }
         }
 
         def awaitValue[T: Manifest](timeout: Duration = Duration.Inf)
@@ -108,22 +109,25 @@ object Hellfire {
 
         def observeAdded: Observable[DataSnapshot] = {
             observe
-            .collect {
-                         case Added(ds) => ds
-                     }
+            .collect
+            {
+                case Added(ds) => ds
+            }
         }
 
         def observe: Observable[Event] = {
             Observable
-            .create(obs => {
-                val listener = createChildEventListener(obs)
+            .create(obs =>
+                    {
+                        val listener = createChildEventListener(obs)
 
-                ref.addChildEventListener(listener)
+                        ref.addChildEventListener(listener)
 
-                Subscription {
-                                 ref.removeEventListener(listener)
-                             }
-            })
+                        Subscription
+                        {
+                            ref.removeEventListener(listener)
+                        }
+                    })
         }
 
         private def createWatchValueEventListener(promise: Promise[DataSnapshot]): ValueEventListener with Object = {
@@ -153,10 +157,12 @@ object Hellfire {
                 override def onChildChanged(ds: DataSnapshot, s: String): Unit = observer.onNext(new Changed(ds))
 
                 override def onCancelled(firebaseError: FirebaseError): Unit = {
-                    if (firebaseError == null) {
+                    if (firebaseError == null)
+                    {
                         observer.onCompleted()
                     }
-                    else {
+                    else
+                    {
                         observer.onError(firebaseError.toException)
                     }
                 }
@@ -168,10 +174,12 @@ object Hellfire {
         private def createCompletionListener(promise: Promise[String]): CompletionListener = {
             new CompletionListener {
                 override def onComplete(firebaseError: FirebaseError, firebase: Firebase): Unit = {
-                    if (firebaseError == null) {
+                    if (firebaseError == null)
+                    {
                         promise.success(firebase.getKey)
                     }
-                    else {
+                    else
+                    {
                         promise.failure(firebaseError.toException)
                     }
                 }
@@ -182,20 +190,24 @@ object Hellfire {
             new Handler {
                 override def doTransaction(mutableData: MutableData): Result = {
                     val result = f(extract[T](mutableData.getValue))
-                    if (result.isDefined) {
+                    if (result.isDefined)
+                    {
                         mutableData.setValue(result.get.toJValue.toJava)
                         Transaction.success(mutableData)
                     }
-                    else {
+                    else
+                    {
                         Transaction.abort()
                     }
                 }
 
                 override def onComplete(firebaseError: FirebaseError, committed: Boolean, dataSnapshot: DataSnapshot): Unit = {
-                    if (firebaseError == null) {
+                    if (firebaseError == null)
+                    {
                         p.success(committed)
                     }
-                    else {
+                    else
+                    {
                         p.failure(firebaseError.toException)
                     }
                 }

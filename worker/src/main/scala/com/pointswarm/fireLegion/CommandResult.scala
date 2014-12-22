@@ -10,7 +10,8 @@ object CommandResult {
     def apply[T](t: Try[AnyRef], command: T) = from(t, command)
 
     def from[T](response: Try[AnyRef], command: T) =
-        response match {
+        response match
+        {
             case Success(data)  => CommandResult.Ok(data, command)
             case Failure(cause) => CommandResult.Error(cause, command)
         }

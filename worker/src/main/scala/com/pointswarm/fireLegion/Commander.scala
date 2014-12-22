@@ -51,7 +51,8 @@ class Commander[TCommand <: AnyRef : Manifest]
         val commandTry = Try(ds.value[TCommand].get)
 
         val responseFuture =
-            for {
+            for
+            {
                 c <- commandTry.asFuture
                 _ = logCommandReceived(id, c)
 
@@ -81,7 +82,8 @@ class Commander[TCommand <: AnyRef : Manifest]
     }
 
     private def logExecuted(commandId: CommandId, result: Try[AnyRef]) {
-        result match {
+        result match
+        {
             case Success(response)  =>
                 println(s"Command $commandName '$commandId' executed by $minionName: $response")
             case Failure(exception) =>

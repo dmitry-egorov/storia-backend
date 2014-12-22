@@ -19,11 +19,12 @@ class CommandsMapper(commandsMapRef: Firebase)(implicit ec: ExecutionContext) {
     def prepare: Future[Unit] = {
         commandsMapRef
         .current
-        .map(ds => {
-            ds
-            .getChildren
-            .foreach(x => updateMinions(x, (l, m) => m :: l))
-        })
+        .map(ds =>
+             {
+                 ds
+                 .getChildren
+                 .foreach(x => updateMinions(x, (l, m) => m :: l))
+             })
     }
 
     def run(token: CancellationToken): Future[Int] = {
@@ -35,7 +36,8 @@ class CommandsMapper(commandsMapRef: Firebase)(implicit ec: ExecutionContext) {
     }
 
     private def change(event: Event): Unit = {
-        event match {
+        event match
+        {
             case Added(ds)   => updateMinions(ds, (l, m) => if (l.contains(m)) l else m :: l)
             case Removed(ds) => updateMinions(ds, (l, m) => l.filter(_ != m))
             case Changed(ds) => updateMinions(ds, (l, m) => m :: l.filter(_ != m))

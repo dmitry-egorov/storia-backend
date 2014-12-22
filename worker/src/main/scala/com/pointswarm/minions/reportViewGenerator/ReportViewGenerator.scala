@@ -28,10 +28,11 @@ class ReportViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionCont
         val addedOn = command.addedOn
 
         getReportIdOf(eventId, authorId)
-        .flatMap {
-                     case Some(reportId) => updateReport(reportId, content, addedOn)
-                     case None           => addReport(content, eventId, authorId, addedOn)
-                 }
+        .flatMap
+        {
+            case Some(reportId) => updateReport(reportId, content, addedOn)
+            case None           => addReport(content, eventId, authorId, addedOn)
+        }
         .map(x => SuccessResponse)
     }
 

@@ -27,7 +27,8 @@ class Registrator(root: Firebase)(implicit f: Formats, ec: ExecutionContext) ext
         val providerUid = getProviderUid(providerData)
         val profileId = name.sanitize
 
-        for {
+        for
+        {
             _ <- assertAccountDoesntExist(accountId)
             _ <- setViews(accountId, profileId, name, provider, providerData, providerUid)
         }

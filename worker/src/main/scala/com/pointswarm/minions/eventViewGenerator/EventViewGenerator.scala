@@ -18,7 +18,8 @@ class EventViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionConte
         val title = command.title
         val id = EventId(title.sanitize)
 
-        for {
+        for
+        {
             exists <- exists(id)
             _ <- generateEventView(title, id, exists)
         }

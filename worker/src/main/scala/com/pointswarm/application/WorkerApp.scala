@@ -47,7 +47,8 @@ object WorkerApp extends App {
 
     val run = Seq(conquest, executorRun).waitAll
 
-    sys addShutdownHook {
+    sys addShutdownHook
+    {
         cancellation.cancel()
 
         Await.result(conquest, 10 seconds)
@@ -80,10 +81,12 @@ object WorkerApp extends App {
             .recruit(paparazzi)
             .createArmy.withAnnouncer
 
-        for {
+        for
+        {
             _ <- army.prepare
             _ <- army.conquer(cancellation)
-        } yield ()
+        }
+        yield ()
     }
 
     def runExecutor: Future[Unit] = {
@@ -92,12 +95,12 @@ object WorkerApp extends App {
         .and(Upvote)
         .build
         .run(cancellation)
-        .doOnNext {
-                      case Success(Left(result)) => println(s"Command executed: $result")
-                      case Success(Right(error)) => err.println(s"Command execution error: $error")
-                      case Failure(exception)    => err
-                                                    .println(s"Command execution exception: ${exception.fullMessage }")
-                  }
+        .doOnNext
+        {
+            case Success(Left(result)) => println(s"Command executed: $result")
+            case Success(Right(error)) => err.println(s"Command execution error: $error")
+            case Failure(exception)    => err.println(s"Command execution exception: ${exception.fullMessage }")
+        }
         .await
     }
 }

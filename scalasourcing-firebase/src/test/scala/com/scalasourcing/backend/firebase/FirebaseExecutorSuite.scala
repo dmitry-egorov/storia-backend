@@ -22,33 +22,38 @@ class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures {
 
     val source = new CancellationSource()
 
-    test("Should listen and execute commands") {
-                                                   val fe = FirebaseExecutorsBuilder(fb).and(Tester).build
+    test("Should listen and execute commands")
+    {
+        val fe = FirebaseExecutorsBuilder(fb).and(Tester).build
 
-                                                   val run = fe.run(source).doOnNext(x => println(x)).await
+        val run = fe.run(source).doOnNext(x => println(x)).await
 
-                                                   val rootRef = fb / "commands" / "tester"
-                                                   val commandId = "commandId1"
-                                                   val rootId = TesterId("rootId1")
-                                                   val expected = Seq(SomethingHappened())
+        val rootRef = fb / "commands" / "tester"
+        val commandId = "commandId1"
+        val rootId = TesterId("rootId1")
+        val expected = Seq(SomethingHappened())
 
-                                                   val f =
-                                                       for {
-                                                           _ <- rootRef / "inbox" / commandId <-- ExecuteCommand(rootId, DoSomething())
-                                                           result <- (rootRef / "results" / commandId)
-                                                                     .awaitValue[Seq[SomethingHappened]]()
-                                                           events <- (fb / "aggregates" / "tester" / rootId / "events")
-                                                                     .awaitValue[Seq[SomethingHappened]]()
-                                                       }
-                                                       yield (result, events)
+        val f =
+            for
+            {
+                _ <- rootRef / "inbox" / commandId <-- ExecuteCommand(rootId, DoSomething())
+                result <- (rootRef / "results" / commandId)
+                          .awaitValue[Seq[SomethingHappened]]()
+                events <- (fb / "aggregates" / "tester" / rootId / "events")
+                          .awaitValue[Seq[SomethingHappened]]()
+            }
+            yield (result, events)
 
-                                                   whenReady(f) {
-                                                                    t => {
-                                                                        t._1 should equal(expected)
-                                                                        t._2 should equal(expected)
-                                                                        source.cancel()
-                                                                        whenReady(run) { _ => () }
-                                                                    }
-                                                                }
-                                               }
+        whenReady(f)
+        {
+            t =>
+            {
+                t._1 should equal(expected)
+                t._2 should equal(expected)
+                source.cancel()
+                whenReady(run)
+                { _ => () }
+            }
+        }
+    }
 }

@@ -16,7 +16,8 @@ class Voter(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Min
         val reportId = command.reportId
         val voterId = command.voterId
 
-        for {
+        for
+        {
             u <- hasUpvoted(reportId, voterId)
             _ <- updateUpvoted(reportId, voterId, u)
             _ <- sortReports(reportId)

@@ -12,12 +12,14 @@ object FutureExtensions {
     implicit class FutureEx[T](val future: Future[T]) extends AnyVal {
         def recoverAsTry(implicit ec: ExecutionContext): Future[Try[T]] =
             future
-            .map {
-                     case response => Success(response)
-                 }
-            .recover {
-                         case cause => Failure(cause)
-                     }
+            .map
+            {
+                case response => Success(response)
+            }
+            .recover
+            {
+                case cause => Failure(cause)
+            }
 
 
         def timeout(duration: Duration)(implicit ec: ExecutionContext): Future[T] = {
@@ -31,7 +33,8 @@ object FutureExtensions {
     }
 
     implicit class TryEx[T](val t: Try[T]) extends AnyVal {
-        def asFuture: Future[T] = t match {
+        def asFuture: Future[T] = t match
+        {
             case Success(value) => Future.successful(value)
             case Failure(cause) => Future.failed(cause)
         }

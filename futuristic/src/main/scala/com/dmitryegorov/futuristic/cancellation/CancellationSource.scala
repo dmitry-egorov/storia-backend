@@ -10,10 +10,12 @@ class CancellationSource extends CancellationToken {
     }
 
     def whenCancelled(act: () => Unit): Unit = {
-        if (cancelled) {
+        if (cancelled)
+        {
             act()
         }
-        else {
+        else
+        {
             callbacks ::= act
         }
     }

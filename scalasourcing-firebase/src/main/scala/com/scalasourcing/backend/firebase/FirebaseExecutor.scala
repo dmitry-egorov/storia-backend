@@ -16,7 +16,8 @@ import scala.util._
 object FirebaseExecutor {
     def apply
     (agg: Aggregate)
-    (fb: Firebase, fes: EventStorage {val a: agg.type})
+    (fb: Firebase, fes: EventStorage
+        {val a: agg.type})
     (implicit f: Formats, ec: ExecutionContext, mm1: Manifest[agg.Id], mm2: Manifest[agg.Command]) = {
         new FirebaseExecutor(fb) {
             val ag: agg.type = agg
@@ -29,7 +30,8 @@ object FirebaseExecutor {
 
 abstract class FirebaseExecutor(val fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Executor {
     val ag: Aggregate
-    val es: EventStorage {val a: ag.type}
+    val es: EventStorage
+        {val a: ag.type}
 
     implicit val m1: Manifest[ag.Id]
     implicit val m2: Manifest[ag.Command]
@@ -46,17 +48,19 @@ abstract class FirebaseExecutor(val fb: Firebase)(implicit f: Formats, ec: Execu
     }
 
     def execute(snapshot: DataSnapshot): Future[Try[ag.Result]] = {
-        try {
+        try
+        {
             execute(snapshot.getKey, snapshot.value[ExecuteCommand[ag.Id, ag.Command]].get).recoverAsTry
         }
-
-        catch {
-            case e: Throwable => Future.successful(Failure(e))
-        }
+        catch
+            {
+                case e: Throwable => Future.successful(Failure(e))
+            }
     }
 
     private def execute(id: String, command: ExecuteCommand[ag.Id, ag.Command]): Future[ag.Result] = {
-        for {
+        for
+        {
             result <- es.execute(command.id, command.payload)
             _ <- writeResult(id, result)
             _ <- removeCommand(id)

@@ -10,19 +10,23 @@ object SingleStringCaseClassSerializer {
     def apply[T <: Product : Manifest](): (Serializer[T], KeySerializer[T]) = (new Value[T](), new Key[T]())
 
     class Value[T <: Product : Manifest]
-        extends CustomSerializer[T](format => ( {
-            case JString(value) => construct(value)
-        }, {
-            case x: T => JString(x.productElement(0).toString)
-        }
+        extends CustomSerializer[T](format => (
+            {
+                case JString(value) => construct(value)
+            },
+            {
+                case x: T => JString(x.productElement(0).toString)
+            }
             ))
 
     class Key[T <: Product : Manifest]
-        extends CustomKeySerializer[T](format => ( {
-            case value => construct(value)
-        }, {
-            case x: T => x.productElement(0).toString
-        }
+        extends CustomKeySerializer[T](format => (
+            {
+                case value => construct(value)
+            },
+            {
+                case x: T => x.productElement(0).toString
+            }
             ))
 
     private def construct[T <: Product : Manifest](value: String): T = {

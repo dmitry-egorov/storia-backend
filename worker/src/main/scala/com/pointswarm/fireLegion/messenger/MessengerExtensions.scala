@@ -17,7 +17,8 @@ object MessengerExtensions {
         def request[TCommand <: AnyRef : Manifest](name: MinionName, command: TCommand, timeout: Duration = Duration
                                                                                                             .Inf)
         : Future[Option[AnyRef]] = {
-            for {
+            for
+            {
                 key <- sendMessage(command)
                 result <- awaitResult(name, command, timeout, key)
             }

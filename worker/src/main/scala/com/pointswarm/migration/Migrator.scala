@@ -10,10 +10,12 @@ object Migrator {
         val index = elastic.index("texts")
 
         index.exists.flatMap(exists =>
-                                 if (!exists) {
+                                 if (!exists)
+                                 {
                                      index.create().recoverAsTry.map(_ => ())
                                  }
-                                 else {
+                                 else
+                                 {
                                      Future.successful(())
                                  }
         )

@@ -12,11 +12,13 @@ object ObservableExtensions {
     implicit class ObservableEx[T](val obs: Observable[T]) extends AnyVal {
         def completeWith(token: CancellationToken)(implicit ec: ExecutionContext) = {
             Observable.create[T](
-                observer => {
+                observer =>
+                {
                     val subs = obs.subscribe(observer)
 
                     token.whenCancelled(
-                        () => {
+                        () =>
+                        {
                             subs.unsubscribe()
                             observer.onCompleted()
                         })
@@ -27,11 +29,13 @@ object ObservableExtensions {
 
         def cancelWith(token: CancellationToken)(implicit ec: ExecutionContext) = {
             Observable.create[T](
-                observer => {
+                observer =>
+                {
                     val subs = obs.subscribe(observer)
 
                     token.whenCancelled(
-                        () => {
+                        () =>
+                        {
                             subs.unsubscribe()
                             observer.onError(new CancellationException)
                         })
