@@ -14,7 +14,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FunSuite, Matchers}
 
-class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with MinionTest {
+class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with MinionTest
+{
     implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
     implicit val defaultPatience = PatienceConfig(Span(10, Seconds), Span(100, Millis))
     implicit val formats = CommonFormats.formats
@@ -25,7 +26,7 @@ class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with Mini
 
     test("Should execute command")
     {
-        val executor = FirebaseExecutorsBuilder(fb).and(Report).build
+        val executor = FirebaseExecutorsBuilder(fb).aggregate(Report).build
         val source = new CancellationSource()
 
         val id = ReportId(ProfileId("user1"), EventId("event1"))
@@ -42,7 +43,7 @@ class AggregatorSuite extends FunSuite with Matchers with ScalaFutures with Mini
         val f =
             for
             {
-                _ <- reportRef / "inbox" / commandId <-- ExecuteCommand(id, payload)
+                _ <- reportRef / "inbox" / commandId <-- AggregateCommand(id, payload)
                 result <- (reportRef / "results" / commandId).awaitValue[Seq[Added]]()
                 events <- (fb / "aggregates" / "report" / id.value / "events")
                           .awaitValue[Seq[Added]]()

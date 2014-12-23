@@ -2,16 +2,18 @@ package com.pointswarm.projections
 
 import com.dmitryegorov.tools.elastic.Client
 import com.pointswarm.common.views.TextIndexEntryView
+import com.pointswarm.domain.reporting.Report
 import com.pointswarm.domain.reporting.Report.{Added, Edited}
-import com.pointswarm.domain.reporting.{Report, ReportId}
 import com.pointswarm.migration.Migrator
-import com.scalasourcing.model.AggregateEvent
+import com.scalasourcing.model.Projection
 import org.json4s.Formats
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReportStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Projection[ReportId] {
-    def consume(id: Report.Id, event: AggregateEvent): Future[Unit] = {
+class ReportStretchingProjection(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Projection(Report)
+{
+    def consume(id: a.Id, event: a.Event): Future[AnyRef] =
+    {
         val content = event match
         {
             case Added(c)  => c
@@ -21,8 +23,8 @@ class ReportStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext
         val docId = id.eventId + "_" + id.userId
         val textEntry = TextIndexEntryView(id.eventId, content)
 
-        elastic index "texts" doc("text", docId, textEntry) map (_ => ())
+        elastic index "texts" doc("text", docId, textEntry) map(_ => docId)
     }
 
-    def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
+    def prepare(): Future[Unit] = Migrator.createTextIndex(elastic)
 }

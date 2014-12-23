@@ -2,8 +2,10 @@ package com.dmitryegorov.tools.serialization
 
 import org.json4s._
 
-object SingleStringCaseClassSerializer {
-    implicit class FormatsEx(val f: Formats) extends AnyVal {
+object SingleStringCaseClassSerializer
+{
+    implicit class FormatsEx(val f: Formats) extends AnyVal
+    {
         def +[T](t: (Serializer[T], KeySerializer[T])) = f + t._1 + t._2
     }
 
@@ -29,7 +31,8 @@ object SingleStringCaseClassSerializer {
             }
             ))
 
-    private def construct[T <: Product : Manifest](value: String): T = {
+    private def construct[T <: Product : Manifest](value: String): T =
+    {
         implicitly[Manifest[T]].runtimeClass.getConstructors()(0).newInstance(value).asInstanceOf[T]
     }
 }

@@ -11,59 +11,22 @@ import rx.lang.scala._
 
 import scala.concurrent._
 import scala.concurrent.duration.Duration
+import scala.util.{Success, Try}
 
-object Hellfire {
-    implicit class RichDataSnapshot(val ds: DataSnapshot) extends AnyVal {
-        def value[T: Manifest](implicit f: Formats): Option[T] = {
+object Hellfire
+{
+    implicit class RichDataSnapshot(val ds: DataSnapshot) extends AnyVal
+    {
+        def value[T: Manifest](implicit f: Formats): Option[T] =
+        {
             extract(ds.getValue)
         }
     }
 
-    implicit class RichFirebase(val ref: Firebase) extends AnyVal {
-        def /(path: Any) = ref.child(path.toString)
-        def /(path: String) = ref.child(path)
-
-        def newKey: String = ref.push().getKey
-
-        def remove: Future[String] = {
-            val p = Promise[String]()
-            ref.removeValue(createCompletionListener(p))
-            p.future
-        }
-
-        def <--(value: Boolean)(implicit f: Formats): Future[String] = set(value)
-        def <--(value: String)(implicit f: Formats): Future[String] = set(value)
-        def <--(value: AnyRef)(implicit f: Formats): Future[String] = set(value)
-        def <%-(value: Boolean)(implicit f: Formats): Future[String] = push(value)
-        def <%-(value: String)(implicit f: Formats): Future[String] = push(value)
-        def <%-(value: AnyRef)(implicit f: Formats): Future[String] = push(value)
-
-        def push(value: Boolean)(implicit f: Formats): Future[String] = ref.push.set(value)
-        def push(value: String)(implicit f: Formats): Future[String] = ref.push.set(value)
-        def push(value: AnyRef)(implicit f: Formats): Future[String] = ref.push.set(value)
-
-        def set(value: Boolean)(implicit f: Formats): Future[String] = set(value: java.lang.Boolean)
-        def set(value: String)(implicit f: Formats): Future[String] = set(value: AnyRef)
-
-        def set(value: Any)(implicit f: Formats): Future[String] = {
-            val obj = value.toJValue.toJava
-
-            val p = Promise[String]()
-
-            ref.setValue(obj, createCompletionListener(p))
-
-            p.future
-        }
-
-        def transaction[T: Manifest](f: Option[T] => Option[T])(implicit fmt: Formats): Future[Boolean] = {
-            val p = Promise[Boolean]()
-
-            ref.runTransaction(createTransactionHandler(f, p))
-
-            p.future
-        }
-
-        def current: Future[DataSnapshot] = {
+    implicit class RichQuery(val ref: Query) extends AnyVal
+    {
+        def current: Future[DataSnapshot] =
+        {
             val p = Promise[DataSnapshot]()
 
             val listener = createSingleValueEventListener(p)
@@ -73,18 +36,21 @@ object Hellfire {
             p.future
         }
 
-        def value[T: Manifest](implicit f: Formats, ec: ExecutionContext): Future[Option[T]] = {
+        def value[T: Manifest](implicit f: Formats, ec: ExecutionContext): Future[Option[T]] =
+        {
             current.map(x => x.value[T])
         }
 
         def whenExists(f: () => Unit)(implicit ec: ExecutionContext): Future[Unit] = exists
                                                                                      .map(exists => if (exists) f())
 
-        def exists(implicit ec: ExecutionContext): Future[Boolean] = {
+        def exists(implicit ec: ExecutionContext): Future[Boolean] =
+        {
             current.map(x => x.exists())
         }
 
-        def await(timeout: Duration = Duration.Inf)(implicit ec: ExecutionContext): Future[DataSnapshot] = {
+        def await(timeout: Duration = Duration.Inf)(implicit ec: ExecutionContext): Future[DataSnapshot] =
+        {
             val p = Promise[DataSnapshot]()
 
             val listener = createWatchValueEventListener(p)
@@ -97,25 +63,37 @@ object Hellfire {
             }
         }
 
-        def awaitValue[T: Manifest](timeout: Duration = Duration.Inf)
-                                   (implicit f: Formats, ec: ExecutionContext): Future[T] = {
+        def awaitValue[T: Manifest](timeout: Duration = Duration
+                                                        .Inf)(implicit f: Formats, ec: ExecutionContext): Future[T] =
+        {
             await(timeout).map(x => x.value[T].get)
         }
 
-        def observeAddedValues[T: Manifest]
-        (implicit f: Formats, ec: ExecutionContext): Observable[T] = {
+        def observeAddedValues[T: Manifest](implicit f: Formats, ec: ExecutionContext): Observable[T] =
+        {
             observeAdded.map(x => x.value[T].get)
         }
 
-        def observeAdded: Observable[DataSnapshot] = {
+        def observeAdded: Observable[DataSnapshot] =
+        {
             observe
             .collect
             {
-                case Added(ds) => ds
+                case SnapAdded(ds) => ds
             }
         }
 
-        def observe: Observable[Event] = {
+        def observeAddedData[I: Manifest, V: Manifest](implicit f: Formats): Observable[Try[DataAdded[I, V]]] =
+        {
+            observeData[I, V]
+            .collect
+            {
+                case x: Try[DataAdded[I, V]] => x
+            }
+        }
+
+        def observe: Observable[SnapEvent] =
+        {
             Observable
             .create(obs =>
                     {
@@ -130,92 +108,167 @@ object Hellfire {
                     })
         }
 
-        private def createWatchValueEventListener(promise: Promise[DataSnapshot]): ValueEventListener with Object = {
-            new ValueEventListener {
-                override def onDataChange(ds: DataSnapshot): Unit = if (ds.exists) promise.success(ds)
-
-                override def onCancelled(firebaseError: FirebaseError): Unit = promise
-                                                                               .failure(new CancellationException())
+        def observeData[I: Manifest, V: Manifest](implicit f: Formats): Observable[Try[DataEvent]] =
+        {
+            observe.map
+            {
+                case SnapAdded(ds)   => Try(DataAdded[I, V](ds.getKey.readKey[I], ds.value[V].get))
+                case SnapChanged(ds) => Try(DataChanged[I, V](ds.getKey.readKey[I], ds.value[V].get))
+                case SnapRemoved(ds) => Try(DataRemoved[I](ds.getKey.readKey[I]))
             }
         }
+    }
 
-        private def createSingleValueEventListener(promise: Promise[DataSnapshot]): ValueEventListener with Object = {
-            new ValueEventListener {
-                override def onDataChange(dataSnapshot: DataSnapshot): Unit = promise.success(dataSnapshot)
+    implicit class RichFirebase(val ref: Firebase) extends AnyVal
+    {
+        def /(path: Any) = ref.child(path.toString)
+        def /(path: String) = ref.child(path)
 
-                override def onCancelled(firebaseError: FirebaseError): Unit = promise
-                                                                               .failure(new CancellationException())
-            }
+        def newKey: String = ref.push().getKey
+
+        def remove: Future[String] =
+        {
+            val p = Promise[String]()
+            ref.removeValue(createCompletionListener(p))
+            p.future
         }
 
-        private def createChildEventListener(observer: Observer[Event]): ChildEventListener = {
-            new ChildEventListener {
-                override def onChildRemoved(ds: DataSnapshot): Unit = observer.onNext(new Removed(ds))
+        def <--(value: Boolean)(implicit f: Formats): Future[String] = set(value)
+        def <--(value: String)(implicit f: Formats): Future[String] = set(value)
+        def <--(value: Any)(implicit f: Formats): Future[String] = set(value)
+        def <%-(value: Boolean)(implicit f: Formats): Future[String] = push(value)
+        def <%-(value: String)(implicit f: Formats): Future[String] = push(value)
+        def <%-(value: AnyRef)(implicit f: Formats): Future[String] = push(value)
 
-                override def onChildMoved(ds: DataSnapshot, s: String): Unit = {}
+        def push(value: Boolean)(implicit f: Formats): Future[String] = ref.push.set(value)
+        def push(value: String)(implicit f: Formats): Future[String] = ref.push.set(value)
+        def push(value: AnyRef)(implicit f: Formats): Future[String] = ref.push.set(value)
 
-                override def onChildChanged(ds: DataSnapshot, s: String): Unit = observer.onNext(new Changed(ds))
+        def set(value: Boolean)(implicit f: Formats): Future[String] = set(value: java.lang.Boolean)
+        def set(value: String)(implicit f: Formats): Future[String] = set(value: AnyRef)
 
-                override def onCancelled(firebaseError: FirebaseError): Unit = {
-                    if (firebaseError == null)
-                    {
-                        observer.onCompleted()
-                    }
-                    else
-                    {
-                        observer.onError(firebaseError.toException)
-                    }
+        def set(value: Any)(implicit f: Formats): Future[String] =
+        {
+            val obj = value.toJValue.toJava
+
+            val p = Promise[String]()
+
+            ref.setValue(obj, createCompletionListener(p))
+
+            p.future
+        }
+
+        def transaction[T: Manifest](f: Option[T] => Option[T])(implicit fmt: Formats): Future[Boolean] =
+        {
+            val p = Promise[Boolean]()
+
+            ref.runTransaction(createTransactionHandler(f, p))
+
+            p.future
+        }
+    }
+
+    private def createWatchValueEventListener(promise: Promise[DataSnapshot]): ValueEventListener with Object =
+    {
+        new ValueEventListener
+        {
+            override def onDataChange(ds: DataSnapshot): Unit = if (ds.exists) promise.success(ds)
+
+            override def onCancelled(firebaseError: FirebaseError): Unit = promise
+                                                                           .failure(new CancellationException())
+        }
+    }
+
+    private def createSingleValueEventListener(promise: Promise[DataSnapshot]): ValueEventListener with Object =
+    {
+        new ValueEventListener
+        {
+            override def onDataChange(dataSnapshot: DataSnapshot): Unit = promise.success(dataSnapshot)
+
+            override def onCancelled(firebaseError: FirebaseError): Unit = promise
+                                                                           .failure(new CancellationException())
+        }
+    }
+
+    private def createChildEventListener(observer: Observer[SnapEvent]): ChildEventListener =
+    {
+        new ChildEventListener
+        {
+            override def onChildRemoved(ds: DataSnapshot): Unit = observer.onNext(new SnapRemoved(ds))
+
+            override def onChildMoved(ds: DataSnapshot, s: String): Unit =
+            {}
+
+            override def onChildChanged(ds: DataSnapshot, s: String): Unit = observer.onNext(new SnapChanged(ds))
+
+            override def onCancelled(firebaseError: FirebaseError): Unit =
+            {
+                if (firebaseError == null)
+                {
+                    observer.onCompleted()
                 }
-
-                override def onChildAdded(ds: DataSnapshot, s: String): Unit = observer.onNext(new Added(ds))
-            }
-        }
-
-        private def createCompletionListener(promise: Promise[String]): CompletionListener = {
-            new CompletionListener {
-                override def onComplete(firebaseError: FirebaseError, firebase: Firebase): Unit = {
-                    if (firebaseError == null)
-                    {
-                        promise.success(firebase.getKey)
-                    }
-                    else
-                    {
-                        promise.failure(firebaseError.toException)
-                    }
+                else
+                {
+                    observer.onError(firebaseError.toException)
                 }
             }
+
+            override def onChildAdded(ds: DataSnapshot, s: String): Unit = observer.onNext(new SnapAdded(ds))
         }
+    }
 
-        private def createTransactionHandler[T: Manifest](f: (Option[T]) => Option[T], p: Promise[Boolean])(implicit fmt: Formats): Handler = {
-            new Handler {
-                override def doTransaction(mutableData: MutableData): Result = {
-                    val result = f(extract[T](mutableData.getValue))
-                    if (result.isDefined)
-                    {
-                        mutableData.setValue(result.get.toJValue.toJava)
-                        Transaction.success(mutableData)
-                    }
-                    else
-                    {
-                        Transaction.abort()
-                    }
+    private def createCompletionListener(promise: Promise[String]): CompletionListener =
+    {
+        new CompletionListener
+        {
+            override def onComplete(firebaseError: FirebaseError, firebase: Firebase): Unit =
+            {
+                if (firebaseError == null)
+                {
+                    promise.success(firebase.getKey)
                 }
-
-                override def onComplete(firebaseError: FirebaseError, committed: Boolean, dataSnapshot: DataSnapshot): Unit = {
-                    if (firebaseError == null)
-                    {
-                        p.success(committed)
-                    }
-                    else
-                    {
-                        p.failure(firebaseError.toException)
-                    }
+                else
+                {
+                    promise.failure(firebaseError.toException)
                 }
             }
         }
     }
 
-    private def extract[T: Manifest](value: AnyRef)(implicit fmt: Formats): Option[T] = {
+    private def createTransactionHandler[T: Manifest](f: (Option[T]) => Option[T], p: Promise[Boolean])(implicit fmt: Formats): Handler =
+    {
+        new Handler
+        {
+            override def doTransaction(mutableData: MutableData): Result =
+            {
+                val result = f(extract[T](mutableData.getValue))
+                if (result.isDefined)
+                {
+                    mutableData.setValue(result.get.toJValue.toJava)
+                    Transaction.success(mutableData)
+                }
+                else
+                {
+                    Transaction.abort()
+                }
+            }
+
+            override def onComplete(firebaseError: FirebaseError, committed: Boolean, dataSnapshot: DataSnapshot): Unit =
+            {
+                if (firebaseError == null)
+                {
+                    p.success(committed)
+                }
+                else
+                {
+                    p.failure(firebaseError.toException)
+                }
+            }
+        }
+    }
+
+    private def extract[T: Manifest](value: AnyRef)(implicit fmt: Formats): Option[T] =
+    {
         Option(value).map(x => x.fromJavaToJValue.extract[T])
     }
 }

@@ -1,14 +1,16 @@
 package com.pointswarm.common.dtos
 
 
-case class HtmlContent(value: String) extends NonEmptyStringContent {
+case class HtmlContent(value: String) extends NonEmptyStringContent
+{
     private val limit = 65000
 
     require(value.length <= limit)
     override def toString = value
 }
 
-object HtmlContent {
+object HtmlContent
+{
 
     implicit def fromString(value: String): HtmlContent = HtmlContent(value)
 

@@ -11,8 +11,10 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-class EventStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand] {
-    def execute(commandId: CommandId, command: AddEventCommand): Future[AnyRef] = {
+class EventStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[AddEventCommand]
+{
+    def execute(commandId: CommandId, command: AddEventCommand): Future[AnyRef] =
+    {
         val title = command.title
         val id = EventId(title.sanitize)
         val textEntry = TextIndexEntryView(id, title)

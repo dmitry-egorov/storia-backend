@@ -2,7 +2,8 @@ package distantfuture
 
 import org.scalatest._
 
-class ExampleSpec extends FlatSpec with Matchers {
+class ExampleSpec extends FlatSpec with Matchers
+{
 
     "Observables" should "work" in
     {

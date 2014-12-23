@@ -6,7 +6,8 @@ import scala.util._
 
 case class CommandResult[TCommand](ok: Boolean, data: Option[AnyRef], error: Option[String], createdOn: DateTime, command: TCommand)
 
-object CommandResult {
+object CommandResult
+{
     def apply[T](t: Try[AnyRef], command: T) = from(t, command)
 
     def from[T](response: Try[AnyRef], command: T) =

@@ -5,10 +5,12 @@ import com.scalasourcing.backend.TesterId
 import com.scalasourcing.backend.firebase.SingleStringCaseClassSerializer._
 import org.json4s.{DefaultFormats, Formats, ShortTypeHints}
 
-object CommonFormats {
-    def formats: Formats = new Formats {
+object CommonFormats
+{
+    def formats: Formats = new Formats
+    {
         val dateFormat = DefaultFormats.lossless.dateFormat
-        override val typeHints = ShortTypeHints(List(classOf[SomethingHappened], classOf[DoSomething]))
+        override val typeHints = ShortTypeHints(List(SomethingHappened.getClass, DoSomething.getClass))
         override val typeHintFieldName = "t"
     } + SingleStringCaseClassSerializer[TesterId]()
 }

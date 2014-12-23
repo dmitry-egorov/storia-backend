@@ -4,14 +4,13 @@ import com.scalasourcing.model._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait EventStorage {
-    implicit val ec: ExecutionContext
-    val a: Aggregate
-
+abstract class EventStorage[A <: Aggregate](protected val a: A)(implicit val ec: ExecutionContext)
+{
     def get(id: a.Id): Future[a.EventsSeq]
     def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean]
 
-    def persist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Unit] = {
+    def persist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Unit] =
+    {
         tryPersist(id, events, expectedVersion)
         .flatMap(
                 committed =>
@@ -20,7 +19,8 @@ trait EventStorage {
             )
     }
 
-    def execute(id: a.Id, command: a.Command): Future[a.Result] = {
+    def execute(id: a.Id, command: a.Command): Future[a.Result] =
+    {
         tryExecute(id, command)
         .flatMap(
                 result =>
@@ -29,7 +29,8 @@ trait EventStorage {
             )
     }
 
-    def tryExecute(id: a.Id, command: a.Command): Future[Option[a.Result]] = {
+    def tryExecute(id: a.Id, command: a.Command): Future[Option[a.Result]] =
+    {
         for
         {
             events <- get(id)

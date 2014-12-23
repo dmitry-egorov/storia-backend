@@ -1,4 +1,4 @@
-package com.pointswarm.fireLegion
+package com.scalasourcing.backend.firebase
 
 case class CommandId(value: String)
 {

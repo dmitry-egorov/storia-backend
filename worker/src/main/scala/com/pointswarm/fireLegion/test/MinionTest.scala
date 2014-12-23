@@ -9,8 +9,10 @@ import org.json4s.Formats
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MinionTest {
-    def execute[Command <: AnyRef : Manifest](fb: Firebase, minion: Minion[Command], command: Command)(implicit ec: ExecutionContext, f: Formats): Future[Unit] = {
+trait MinionTest
+{
+    def execute[Command <: AnyRef : Manifest](fb: Firebase, minion: Minion[Command], command: Command)(implicit ec: ExecutionContext, f: Formats): Future[Unit] =
+    {
         val army = Master(fb).recruit(minion).createArmy
 
         army.conquer(CancellationToken.none)

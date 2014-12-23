@@ -2,51 +2,55 @@ package com.pointswarm.domain.voting
 
 import com.pointswarm.common.dtos.ProfileId
 import com.pointswarm.domain.reporting.ReportId
-import com.scalasourcing.model._
+import com.scalasourcing.model.{Aggregate, CompositeAggregateId}
 
-case class UpvoteId(userId: ProfileId, reportId: ReportId) extends CompositeAggregateId {
+case class UpvoteId(userId: ProfileId, reportId: ReportId) extends CompositeAggregateId
+{
     val ids = Seq(userId, reportId)
 }
 
-object Upvote extends Aggregate {
+object Upvote extends Aggregate
+{
     type Id = UpvoteId
 
-    case class Cast() extends Command
-    case class Cancel() extends Command
+    case object Cast extends Command
+    case object Cancel extends Command
 
-    case class Casted() extends Event
-    case class Cancelled() extends Event
+    case object Casted extends Event
+    case object Cancelled extends Event
 
-    case class WasAlreadyCastedError() extends Error
-    case class WasNotCastedError() extends Error
+    case object WasAlreadyCastedError extends Error
+    case object WasNotCastedError extends Error
 
-    case class CastedUpvote() extends State {
+    case object CastedUpvote extends State
+    {
         def apply(event: Event) = event match
         {
-            case Cancelled() => NotCastedUpvote()
-            case _           => this
+            case Cancelled => NotCastedUpvote
+            case _         => this
         }
 
         def apply(command: Command) = command match
         {
-            case Cast()   => WasAlreadyCastedError()
-            case Cancel() => Cancelled()
+            case Cast   => WasAlreadyCastedError
+            case Cancel => Cancelled
         }
     }
 
-    case class NotCastedUpvote() extends State {
+    case object NotCastedUpvote extends State
+    {
         def apply(event: Event) = event match
         {
-            case Casted() => CastedUpvote()
-            case _        => this
+            case Casted => CastedUpvote
+            case _      => this
         }
 
         def apply(command: Command) = command match
         {
-            case Cast()   => Casted()
-            case Cancel() => WasNotCastedError()
+            case Cast   => Casted
+            case Cancel => WasNotCastedError
         }
     }
 
-    def seed = NotCastedUpvote()
+    def seed = NotCastedUpvote
 }

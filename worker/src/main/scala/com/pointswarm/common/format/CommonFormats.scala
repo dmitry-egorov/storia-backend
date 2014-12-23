@@ -9,8 +9,10 @@ import com.pointswarm.fireLegion._
 import org.json4s._
 import org.json4s.ext.EnumNameSerializer
 
-object CommonFormats {
-    implicit val formats = new Formats {
+object CommonFormats
+{
+    implicit val formats = new Formats
+    {
         val dateFormat = DefaultFormats.lossless.dateFormat
         override val typeHintFieldName = "t"
     } +

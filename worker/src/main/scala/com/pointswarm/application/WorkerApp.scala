@@ -2,8 +2,8 @@ package com.pointswarm.application
 
 import java.lang.System.err
 
-import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.futuristic.ObservableExtensions._
+import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.futuristic.cancellation.CancellationSource
 import com.dmitryegorov.hellfire.Hellfire._
 import com.dmitryegorov.tools.elastic.Client
@@ -23,13 +23,15 @@ import com.pointswarm.minions.reportViewGenerator._
 import com.pointswarm.minions.reportsSorter._
 import com.pointswarm.minions.searcher.Searcher
 import com.pointswarm.minions.voter._
+import com.pointswarm.projections.ReportStretchingProjection
 import com.scalasourcing.backend.firebase.FirebaseExecutorsBuilder
 
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-object WorkerApp extends App {
+object WorkerApp extends App
+{
     println("A new Master is born...")
 
     implicit val formats = CommonFormats.formats
@@ -56,7 +58,8 @@ object WorkerApp extends App {
 
     Await.result(conquest, Duration.Inf)
 
-    def runMaster: Future[Unit] = {
+    def runMaster: Future[Unit] =
+    {
         val searcher = new Searcher(elastic)
         val elasticAddEvent = new EventStretcher(elastic)
         val elasticAddReport = new ReportStretcher(elastic)
@@ -89,16 +92,19 @@ object WorkerApp extends App {
         yield ()
     }
 
-    def runExecutor: Future[Unit] = {
+    def runExecutor: Future[Unit] =
+    {
         FirebaseExecutorsBuilder(dddRef)
-        .and(Report)
-        .and(Upvote)
+        .aggregate(Report)
+        .aggregate(Upvote)
+        .projection(Report)(new ReportStretchingProjection(elastic))
         .build
         .run(cancellation)
         .doOnNext
         {
             case Success(Left(result)) => println(s"Command executed: $result")
             case Success(Right(error)) => err.println(s"Command execution error: $error")
+            case Success(event)        => println(s"Event processed: $event")
             case Failure(exception)    => err.println(s"Command execution exception: ${exception.fullMessage }")
         }
         .await

@@ -3,11 +3,13 @@ package com.pointswarm.domain.reporting
 import com.pointswarm.common.dtos.{EventId, HtmlContent, ProfileId}
 import com.scalasourcing.model._
 
-case class ReportId(userId: ProfileId, eventId: EventId) extends CompositeAggregateId {
+case class ReportId(userId: ProfileId, eventId: EventId) extends CompositeAggregateId
+{
     val ids = Seq(userId, eventId)
 }
 
-object Report extends Aggregate {
+object Report extends Aggregate
+{
     type Id = ReportId
 
     case class DoReport(content: HtmlContent) extends Command
@@ -15,9 +17,10 @@ object Report extends Aggregate {
     case class Added(originalContent: HtmlContent) extends Event
     case class Edited(newContent: HtmlContent) extends Event
 
-    case class ContentIsTheSame() extends Error
+    case object ContentIsTheSame extends Error
 
-    case class NotExistingReport() extends State {
+    case object NotExistingReport extends State
+    {
         def apply(event: Event) = event match
         {
             case Added(content) => ExistingReport(content)
@@ -30,7 +33,8 @@ object Report extends Aggregate {
         }
     }
 
-    case class ExistingReport(content: HtmlContent) extends State {
+    case class ExistingReport(content: HtmlContent) extends State
+    {
         def apply(event: Event) = event match
         {
             case Edited(newContent) => copy(newContent)
@@ -42,12 +46,12 @@ object Report extends Aggregate {
             case DoReport(newContent) => edit(newContent)
         }
 
-        private def edit(newContent: HtmlContent): Result = {
-            if (newContent == content) ContentIsTheSame()
+        private def edit(newContent: HtmlContent): Result =
+        {
+            if (newContent == content) ContentIsTheSame
             else Edited(newContent)
         }
     }
 
-    def seed = NotExistingReport()
-
+    def seed = NotExistingReport
 }

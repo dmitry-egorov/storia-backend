@@ -2,7 +2,8 @@ package com.scalasourcing.model
 
 import com.scalasourcing.tools.StringExtensions._
 
-trait Aggregate {
+trait Aggregate
+{
     def seed: State
 
     def name = getClass.getSimpleName.replace("$", "").decapitalize
@@ -17,7 +18,8 @@ trait Aggregate {
     implicit protected def ok(event: Event): Result = Left(Seq(event))
     implicit protected def error(error: Error): Result = Right(error)
 
-    trait State {
+    trait State
+    {
         def apply(event: Event): State
         def apply(command: Command): Result
 
@@ -35,7 +37,8 @@ trait Aggregate {
     }
 }
 
-object Aggregate {
+object Aggregate
+{
     type AggregateEventsSeq = Seq[AggregateEvent]
     type AggregateResult = Either[AggregateEventsSeq, AggregateError]
 }

@@ -6,8 +6,10 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-case class Recruiter[TCommand <: AnyRef : Manifest](minion: Minion[TCommand]) extends Summoner {
-    def summonConqueror(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): Conqueror = {
+case class Recruiter[TCommand <: AnyRef : Manifest](minion: Minion[TCommand]) extends Summoner
+{
+    def summonConqueror(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): Conqueror =
+    {
         new Commander(fb, minion)
     }
 }

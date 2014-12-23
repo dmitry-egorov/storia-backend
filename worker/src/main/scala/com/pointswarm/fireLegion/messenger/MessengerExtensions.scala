@@ -9,14 +9,17 @@ import org.json4s._
 import scala.concurrent._
 import scala.concurrent.duration.Duration
 
-object MessengerExtensions {
+object MessengerExtensions
+{
 
-    implicit class FirebaseMessengerEx(val root: Firebase)(implicit f: Formats, ec: ExecutionContext) {
+    implicit class FirebaseMessengerEx(val root: Firebase)(implicit f: Formats, ec: ExecutionContext)
+    {
         private lazy val minionsRoot: Firebase = root / "minions"
 
         def request[TCommand <: AnyRef : Manifest](name: MinionName, command: TCommand, timeout: Duration = Duration
                                                                                                             .Inf)
-        : Future[Option[AnyRef]] = {
+        : Future[Option[AnyRef]] =
+        {
             for
             {
                 key <- sendMessage(command)
@@ -25,11 +28,13 @@ object MessengerExtensions {
             yield result
         }
 
-        private def sendMessage[TCommand <: AnyRef : Manifest](command: TCommand): Future[String] = {
+        private def sendMessage[TCommand <: AnyRef : Manifest](command: TCommand): Future[String] =
+        {
             minionsRoot / "distributor" / "inbox" <%- DistributeCommand(command)
         }
 
-        private def awaitResult[TCommand <: AnyRef : Manifest](name: MinionName, command: TCommand, timeout: Duration, key: String): Future[Option[AnyRef]] = {
+        private def awaitResult[TCommand <: AnyRef : Manifest](name: MinionName, command: TCommand, timeout: Duration, key: String): Future[Option[AnyRef]] =
+        {
             (minionsRoot / name / "results" / key)
             .awaitValue[CommandResult[TCommand]](timeout)
             .map(value => if (!value.ok) throw RequestFailedException(name, command) else value.data)

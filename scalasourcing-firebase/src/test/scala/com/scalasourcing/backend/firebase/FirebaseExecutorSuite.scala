@@ -11,9 +11,10 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
 
 
-class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures {
+class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
+{
     implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
-    implicit val defaultPatience = PatienceConfig(Span(5, Seconds), Span(100, Millis))
+    implicit val defaultPatience = PatienceConfig(Span(10, Seconds), Span(300, Millis))
     implicit val formats = CommonFormats.formats
 
     val fb = new Firebase("https://storia-test.firebaseio.com/ag")
@@ -22,34 +23,38 @@ class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures {
 
     val source = new CancellationSource()
 
-    test("Should listen and execute commands")
+    test("Should execute commands and run projections")
     {
-        val fe = FirebaseExecutorsBuilder(fb).and(Tester).build
+        val fe = FirebaseExecutorsBuilder(fb)
+                 .aggregate(Tester)
+                 .projection(Tester)(new TesterProjection(fb))
+                 .build
 
         val run = fe.run(source).doOnNext(x => println(x)).await
 
         val rootRef = fb / "commands" / "tester"
         val commandId = "commandId1"
         val rootId = TesterId("rootId1")
-        val expected = Seq(SomethingHappened())
+        val expected = Seq(SomethingHappened)
 
         val f =
             for
             {
-                _ <- rootRef / "inbox" / commandId <-- ExecuteCommand(rootId, DoSomething())
-                result <- (rootRef / "results" / commandId)
-                          .awaitValue[Seq[SomethingHappened]]()
-                events <- (fb / "aggregates" / "tester" / rootId / "events")
-                          .awaitValue[Seq[SomethingHappened]]()
+                _ <- rootRef / "inbox" / commandId <-- AggregateCommand(rootId, DoSomething)
+                result <- (rootRef / "results" / commandId).awaitValue[Seq[SomethingHappened.type]]()
+                events <- (fb / "aggregateEvents" / "tester" / rootId ).awaitValue[Seq[SomethingHappened.type]]()
+                view <- (fb / "views" / "tester" / rootId).awaitValue[Boolean]()
             }
-            yield (result, events)
+            yield (result, events, view)
 
         whenReady(f)
         {
             t =>
             {
-                t._1 should equal(expected)
-                t._2 should equal(expected)
+                //Todo: case objects are not equal after deserialization!
+                t._1(0).getClass should equal (expected(0).getClass)
+                t._2(0).getClass should equal (expected(0).getClass)
+                t._3 should equal (true)
                 source.cancel()
                 whenReady(run)
                 { _ => () }

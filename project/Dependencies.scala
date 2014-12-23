@@ -1,6 +1,7 @@
 import sbt._
 
-object Dependencies {
+object Dependencies
+{
     val scalatest = "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 
     val scalaz = "org.scalaz" %% "scalaz-core" % "7.1.0"

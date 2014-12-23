@@ -10,11 +10,13 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-class Searcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[SearchCommand] {
+class Searcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[SearchCommand]
+{
 
     override def prepare: Future[Unit] = Migrator.createTextIndex(elastic)
 
-    def execute(commandId: CommandId, command: SearchCommand): Future[SearcherResponse] = {
+    def execute(commandId: CommandId, command: SearchCommand): Future[SearcherResponse] =
+    {
         val queryText = command.query.toLowerCase
 
         (elastic search "texts")
@@ -22,7 +24,8 @@ class Searcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) exten
         .map(toResponse)
     }
 
-    private def toResponse(elasticResponse: List[TextIndexEntryView]): SearcherResponse = {
+    private def toResponse(elasticResponse: List[TextIndexEntryView]): SearcherResponse =
+    {
         elasticResponse
         .map(_.eventId)
         .distinct

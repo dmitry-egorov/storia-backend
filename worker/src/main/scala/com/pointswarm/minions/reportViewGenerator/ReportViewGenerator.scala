@@ -15,13 +15,15 @@ import org.json4s._
 import scala.collection.immutable._
 import scala.concurrent._
 
-class ReportViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[ReportCommand] {
+class ReportViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[ReportCommand]
+{
     private lazy val reportsRoot: Firebase = root / "reports"
     private lazy val profileReportsRoot = root / "profileReports"
     private lazy val eventsRoot = root / "events"
     private lazy val reportHistoriesRoot: Firebase = root / "reportHistories"
 
-    def execute(commandId: CommandId, command: ReportCommand): Future[AnyRef] = {
+    def execute(commandId: CommandId, command: ReportCommand): Future[AnyRef] =
+    {
         val content = command.content
         val eventId = command.eventId
         val authorId = command.authorId
@@ -36,7 +38,8 @@ class ReportViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionCont
         .map(x => SuccessResponse)
     }
 
-    def addReport(content: HtmlContent, eventId: EventId, authorId: ProfileId, addedOn: DateTime): Future[Unit] = {
+    def addReport(content: HtmlContent, eventId: EventId, authorId: ProfileId, addedOn: DateTime): Future[Unit] =
+    {
         val reportId = ReportId(root.newKey)
         val view = ReportView(content, addedOn, authorId, eventId, None)
 
@@ -50,40 +53,48 @@ class ReportViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionCont
         .waitAll
     }
 
-    private def updateReport(id: ReportId, content: HtmlContent, time: DateTime): Future[Unit] = {
+    private def updateReport(id: ReportId, content: HtmlContent, time: DateTime): Future[Unit] =
+    {
         List(
             setContent(id, content),
             setHistory(id, content)
         ).waitAll
     }
 
-    private def setContent(id: ReportId, content: HtmlContent): Future[String] = {
+    private def setContent(id: ReportId, content: HtmlContent): Future[String] =
+    {
         reportsRoot / id / "content" <-- content
     }
 
 
-    private def setHistory(reportId: ReportId, content: HtmlContent): Future[String] = {
+    private def setHistory(reportId: ReportId, content: HtmlContent): Future[String] =
+    {
         reportHistoriesRoot / reportId <%- HistoricalContent(content)
     }
 
-    private def setReportView(view: ReportView, reportId: ReportId): Future[String] = {
+    private def setReportView(view: ReportView, reportId: ReportId): Future[String] =
+    {
         reportsRoot / reportId <-- view
     }
 
-    private def sortReports(eventId: EventId): Future[Option[AnyRef]] = {
+    private def sortReports(eventId: EventId): Future[Option[AnyRef]] =
+    {
         val command = SortReportsCommand(Some(eventId), None)
         root request("reportsSorter", command)
     }
 
-    private def setProfileReports(eventId: EventId, authorId: ProfileId, reportId: ReportId): Future[String] = {
+    private def setProfileReports(eventId: EventId, authorId: ProfileId, reportId: ReportId): Future[String] =
+    {
         profileReportsRoot / authorId / eventId <-- reportId
     }
 
-    private def setEventReports(eventId: EventId, reportId: ReportId): Future[String] = {
+    private def setEventReports(eventId: EventId, reportId: ReportId): Future[String] =
+    {
         eventsRoot / eventId / "reports" / reportId <-- true
     }
 
-    private def getReportIdOf(eventId: EventId, authorId: ProfileId): Future[Option[ReportId]] = {
+    private def getReportIdOf(eventId: EventId, authorId: ProfileId): Future[Option[ReportId]] =
+    {
         (profileReportsRoot / authorId / eventId).value[ReportId]
     }
 }

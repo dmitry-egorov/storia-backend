@@ -4,13 +4,16 @@ import java.util
 import java.util.concurrent.TimeoutException
 
 import org.json4s._
+import org.json4s.jackson.{JsonMethods, Serialization}
 
 import scala.collection.JavaConversions._
 import scala.concurrent._
 import scala.concurrent.duration.Duration
 
-object Tools {
-    implicit class RichJValue(val cc: JValue) extends AnyVal {
+object Tools
+{
+    implicit class RichJValue(val cc: JValue) extends AnyVal
+    {
         def toJava: AnyRef = cc match
         {
             case JString(value)  => value
@@ -25,8 +28,26 @@ object Tools {
         }
     }
 
-    implicit class RichAny(val cc: Any) extends AnyVal {
-        def fromJavaToJValue: JValue = {
+    implicit class RichString(val str: String) extends AnyVal
+    {
+        def read[T](implicit f: Formats, m: Manifest[T]) = {
+            Serialization.read[T](str)
+        }
+
+        def readKey[T](implicit f: Formats, m: Manifest[T]) = {
+            Serialization.read[T](s""""$str"""")
+        }
+    }
+
+    implicit class RichAnyRef[T <: AnyRef](val cc: T) extends AnyVal
+    {
+        def write(implicit f: Formats) = Serialization.write[T](cc)
+    }
+
+    implicit class RichAny(val cc: Any) extends AnyVal
+    {
+        def fromJavaToJValue: JValue =
+        {
             cc match
             {
                 case l: util.ArrayList[_]       => JArray(l.map(i => i.fromJavaToJValue).toList)
@@ -46,26 +67,32 @@ object Tools {
         def toJValue(implicit f: Formats) = Extraction.decompose(cc)
     }
 
-    implicit class RichFuture[T](val future: Future[T]) extends AnyVal {
-        def timeout(duration: Duration)(implicit ec: ExecutionContext): Future[T] = {
+    implicit class RichFuture[T](val future: Future[T]) extends AnyVal
+    {
+        def timeout(duration: Duration)(implicit ec: ExecutionContext): Future[T] =
+        {
             Future.firstCompletedOf(List(future, timeoutFail[T](duration)))
         }
     }
 
-    implicit class RichSeqFuture[T](val futures: Seq[Future[T]]) extends AnyVal {
+    implicit class RichSeqFuture[T](val futures: Seq[Future[T]]) extends AnyVal
+    {
         def waitAll(implicit ec: ExecutionContext) = Future.sequence(futures).map(_ => ())
         def whenAll(implicit ec: ExecutionContext) = Future.sequence(futures)
     }
 
     private lazy val timer = new java.util.Timer()
 
-    private def timeoutFail[T](duration: Duration)(implicit ec: ExecutionContext): Future[T] = {
+    private def timeoutFail[T](duration: Duration)(implicit ec: ExecutionContext): Future[T] =
+    {
         val p = Promise[T]()
 
         if (duration != Duration.Inf)
         {
-            timer.schedule(new java.util.TimerTask {
-                def run() {
+            timer.schedule(new java.util.TimerTask
+            {
+                def run()
+                {
                     p.failure(new TimeoutException)
                 }
             }, duration.toMillis)

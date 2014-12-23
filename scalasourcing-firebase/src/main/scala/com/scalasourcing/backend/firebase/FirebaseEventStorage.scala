@@ -9,30 +9,23 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-object FirebaseEventStorage {
-    def apply(agg: Aggregate)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats): FirebaseEventStorage
-        {val a: agg.type} = {
-        new FirebaseEventStorage(fb) {
-            override val a: agg.type = agg
-        }
-    }
-}
-
-abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionContext, f: Formats) extends EventStorage {
+class FirebaseEventStorage[A <: Aggregate](ag: A)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats) extends EventStorage[A](ag)
+{
     private lazy val aggregatesRef = fb / "aggregates" / a.name
+    private lazy val aggregatesEventsRef = fb / "aggregateEvents" / a.name
 
-    def get(id: a.Id): Future[a.EventsSeq] = {
-        (aggregateRef(id) / "events")
+    def get(id: a.Id): Future[a.EventsSeq] =
+    {
+        aggregateEventsRef(id)
         .value[Seq[AnyRef]]
         .map(x => x.getOrElse(Seq.empty))
         .mapTo[a.EventsSeq]
     }
 
-    def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean] = {
-        val ar = aggregateRef(id)
-
-        val versionRef = ar / "version"
-        val eventsRef = ar / "events"
+    def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean] =
+    {
+        val versionRef = aggregateRef(id) / "version"
+        val eventsRef = aggregateEventsRef(id)
 
         versionRef
         .transaction[Int](
@@ -64,7 +57,13 @@ abstract class FirebaseEventStorage(fb: Firebase)(implicit val ec: ExecutionCont
                 })
     }
 
-    private def aggregateRef(id: a.Id): Firebase = {
-        aggregatesRef / id.value
+    private def aggregateEventsRef(id: a.Id): Firebase =
+    {
+        aggregatesEventsRef / id
+    }
+
+    private def aggregateRef(id: a.Id): Firebase =
+    {
+        aggregatesRef / id
     }
 }

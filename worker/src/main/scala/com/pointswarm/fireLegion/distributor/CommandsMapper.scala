@@ -11,12 +11,14 @@ import scala.collection.JavaConversions._
 import scala.concurrent._
 
 
-class CommandsMapper(commandsMapRef: Firebase)(implicit ec: ExecutionContext) {
+class CommandsMapper(commandsMapRef: Firebase)(implicit ec: ExecutionContext)
+{
     private var map: Map[CommandName, List[MinionName]] = Map.empty
 
     def getCurrentMap: Map[CommandName, List[MinionName]] = map
 
-    def prepare: Future[Unit] = {
+    def prepare: Future[Unit] =
+    {
         commandsMapRef
         .current
         .map(ds =>
@@ -27,7 +29,8 @@ class CommandsMapper(commandsMapRef: Firebase)(implicit ec: ExecutionContext) {
              })
     }
 
-    def run(token: CancellationToken): Future[Int] = {
+    def run(token: CancellationToken): Future[Int] =
+    {
         commandsMapRef
         .observe
         .completeWith(token)
@@ -35,16 +38,18 @@ class CommandsMapper(commandsMapRef: Firebase)(implicit ec: ExecutionContext) {
         .countF
     }
 
-    private def change(event: Event): Unit = {
+    private def change(event: SnapEvent): Unit =
+    {
         event match
         {
-            case Added(ds)   => updateMinions(ds, (l, m) => if (l.contains(m)) l else m :: l)
-            case Removed(ds) => updateMinions(ds, (l, m) => l.filter(_ != m))
-            case Changed(ds) => updateMinions(ds, (l, m) => m :: l.filter(_ != m))
+            case SnapAdded(ds)   => updateMinions(ds, (l, m) => if (l.contains(m)) l else m :: l)
+            case SnapRemoved(ds) => updateMinions(ds, (l, m) => l.filter(_ != m))
+            case SnapChanged(ds) => updateMinions(ds, (l, m) => m :: l.filter(_ != m))
         }
     }
 
-    def updateMinions(ds: DataSnapshot, f: (List[MinionName], MinionName) => List[MinionName]) {
+    def updateMinions(ds: DataSnapshot, f: (List[MinionName], MinionName) => List[MinionName])
+    {
         val name = ds.getKey
         val commandName = ds.getValue.toString
 

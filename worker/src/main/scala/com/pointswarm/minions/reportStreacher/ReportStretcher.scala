@@ -10,8 +10,10 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-class ReportStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[ReportCommand] {
-    def execute(commandId: CommandId, command: ReportCommand): Future[AnyRef] = {
+class ReportStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Minion[ReportCommand]
+{
+    def execute(commandId: CommandId, command: ReportCommand): Future[AnyRef] =
+    {
         val content = command.content
         val eventId = command.eventId
         val userId = command.authorId

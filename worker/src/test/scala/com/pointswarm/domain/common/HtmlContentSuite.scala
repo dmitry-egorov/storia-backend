@@ -3,7 +3,8 @@ package com.pointswarm.domain.common
 import com.pointswarm.common.dtos.HtmlContent
 import org.scalatest.{FunSuite, Matchers}
 
-class HtmlContentSuite extends FunSuite with Matchers {
+class HtmlContentSuite extends FunSuite with Matchers
+{
     test("Should be created")
     {
         HtmlContent("abc").value should equal("abc")

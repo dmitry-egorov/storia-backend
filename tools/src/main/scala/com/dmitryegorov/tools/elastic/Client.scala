@@ -11,7 +11,8 @@ import org.json4s.Formats
 
 import scala.concurrent._
 
-class Client(uri: String)(implicit ec: ExecutionContext) {
+class Client(uri: String)(implicit ec: ExecutionContext)
+{
     private lazy val baseUrl =
     {
         val withoutAuth = url(uri)
@@ -37,7 +38,8 @@ class Client(uri: String)(implicit ec: ExecutionContext) {
     def index(indexName: String): IndexDefinition = new IndexDefinition(indexName)
 
 
-    class SearchDefinition(indexName: String) {
+    class SearchDefinition(indexName: String)
+    {
         def `match`[T: Manifest](fieldName: String, queryText: String)(implicit f: Formats): Future[List[T]] =
             Http
             {
@@ -49,8 +51,10 @@ class Client(uri: String)(implicit ec: ExecutionContext) {
             .map(_.hits[T])
     }
 
-    class IndexDefinition(indexName: String) {
-        def create(): Future[Response] = {
+    class IndexDefinition(indexName: String)
+    {
+        def create(): Future[Response] =
+        {
             Http
             {
                 postUrl / indexName
@@ -58,7 +62,8 @@ class Client(uri: String)(implicit ec: ExecutionContext) {
             .ensureOk
         }
 
-        def doc(indexType: String, id: String, doc: AnyRef)(implicit f: Formats): Future[Response] = {
+        def doc(indexType: String, id: String, doc: AnyRef)(implicit f: Formats): Future[Response] =
+        {
             Http
             {
                 (postUrl / indexName / indexType / id)
@@ -67,7 +72,8 @@ class Client(uri: String)(implicit ec: ExecutionContext) {
             .ensureOk
         }
 
-        def exists: Future[Boolean] = {
+        def exists: Future[Boolean] =
+        {
             Http
             {
                 (baseUrl / indexName)
@@ -79,16 +85,20 @@ class Client(uri: String)(implicit ec: ExecutionContext) {
 }
 
 
-object Client {
+object Client
+{
 
     import com.dmitryegorov.tools.extensions.HttpExtensions._
 
-    implicit class ResponseFutureEx(val response: Future[Response]) extends AnyVal {
+    implicit class ResponseFutureEx(val response: Future[Response]) extends AnyVal
+    {
         def ensureOk(implicit ec: ExecutionContext) = response.map(x => x.assertOk)
     }
 
-    implicit class ClientResponseEx(val response: Response) extends AnyVal {
-        def hits[T: Manifest](implicit f: Formats): List[T] = {
+    implicit class ClientResponseEx(val response: Response) extends AnyVal
+    {
+        def hits[T: Manifest](implicit f: Formats): List[T] =
+        {
             response
             .getResponseBody
             .readAs[ElasticResponse[T]]

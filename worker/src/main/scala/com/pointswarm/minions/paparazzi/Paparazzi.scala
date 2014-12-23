@@ -15,10 +15,12 @@ import org.json4s.jackson.JsonMethods._
 
 import scala.concurrent.{Future, _}
 
-class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[FindSocialPictureCommand] {
+class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[FindSocialPictureCommand]
+{
     private lazy val profilesRoot: Firebase = root / "profiles"
 
-    override def execute(commandId: CommandId, command: FindSocialPictureCommand): Future[AnyRef] = {
+    override def execute(commandId: CommandId, command: FindSocialPictureCommand): Future[AnyRef] =
+    {
         for
         {
             imageUrl <- findProfileImageUrl(command.provider, command.providerUid)
@@ -27,11 +29,13 @@ class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
     }
 
 
-    private def setProfileImage(profileId: ProfileId, imageUrl: String) = {
+    private def setProfileImage(profileId: ProfileId, imageUrl: String) =
+    {
         profilesRoot / profileId / "image" <-- imageUrl
     }
 
-    private def findProfileImageUrl(provider: ProviderType, providerUid: String): Future[String] = {
+    private def findProfileImageUrl(provider: ProviderType, providerUid: String): Future[String] =
+    {
         provider match
         {
             case Facebook => getFacebookImageUrl(providerUid)
@@ -40,11 +44,13 @@ class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
         }
     }
 
-    private def getFacebookImageUrl(userId: String): Future[String] = {
+    private def getFacebookImageUrl(userId: String): Future[String] =
+    {
         Future.successful(s"http://graph.facebook.com/$userId/picture?type=square")
     }
 
-    private def getGoogleImageUrl(userId: String): Future[String] = {
+    private def getGoogleImageUrl(userId: String): Future[String] =
+    {
         Http(url(s"http://picasaweb.google.com/data/entry/api/user/$userId?alt=json"))
         .map(data => getUrlFromGoogleResponse(data))
         .recover
@@ -53,7 +59,8 @@ class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
         }
     }
 
-    private def getUrlFromGoogleResponse(data: Response): String = {
+    private def getUrlFromGoogleResponse(data: Response): String =
+    {
         val jvalue = dyn(parse(data.getResponseBody)).entry.gphoto$thumbnail.$t.raw
 
         jvalue match

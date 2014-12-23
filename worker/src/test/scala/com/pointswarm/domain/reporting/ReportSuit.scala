@@ -5,7 +5,8 @@ import com.pointswarm.domain.reporting.Report._
 import com.scalasourcing.bdd.AggregateBDD
 import org.scalatest.FunSuite
 
-class ReportSuit extends FunSuite with AggregateBDD {
+class ReportSuit extends FunSuite with AggregateBDD
+{
     val agg = Report
 
     val content = HtmlContent("Content")
@@ -25,7 +26,7 @@ class ReportSuit extends FunSuite with AggregateBDD {
 
     test("Should not be edited with the same content")
     {
-        given it_was Added(content) when_I DoReport(content) then_expect ContentIsTheSame()
+        given it_was Added(content) when_I DoReport(content) then_expect ContentIsTheSame
     }
 
     test("Should be edited with different content for the second time")

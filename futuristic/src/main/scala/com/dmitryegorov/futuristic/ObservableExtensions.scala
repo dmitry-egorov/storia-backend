@@ -7,10 +7,13 @@ import rx.lang.scala.Observable
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-object ObservableExtensions {
+object ObservableExtensions
+{
 
-    implicit class ObservableEx[T](val obs: Observable[T]) extends AnyVal {
-        def completeWith(token: CancellationToken)(implicit ec: ExecutionContext) = {
+    implicit class ObservableEx[T](val obs: Observable[T]) extends AnyVal
+    {
+        def completeWith(token: CancellationToken)(implicit ec: ExecutionContext) =
+        {
             Observable.create[T](
                 observer =>
                 {
@@ -27,7 +30,8 @@ object ObservableExtensions {
                 })
         }
 
-        def cancelWith(token: CancellationToken)(implicit ec: ExecutionContext) = {
+        def cancelWith(token: CancellationToken)(implicit ec: ExecutionContext) =
+        {
             Observable.create[T](
                 observer =>
                 {
@@ -52,7 +56,8 @@ object ObservableExtensions {
         def countF(implicit ec: ExecutionContext): Future[Int] = obs.count(_ => true).firstF
         def lastOrElseF(default: => T)(implicit ec: ExecutionContext): Future[T] = obs.lastOrElse(default).firstF
         def lastOptionF(implicit ec: ExecutionContext): Future[Option[T]] = obs.lastOption.firstF
-        def firstF(implicit ec: ExecutionContext): Future[T] = {
+        def firstF(implicit ec: ExecutionContext): Future[T] =
+        {
             val p = Promise[T]()
 
             val subs = obs.first.subscribe(
