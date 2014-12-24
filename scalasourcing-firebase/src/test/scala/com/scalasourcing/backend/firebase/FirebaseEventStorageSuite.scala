@@ -2,6 +2,7 @@ package com.scalasourcing.backend.firebase
 
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
+import com.scalasourcing.backend.firebase.domain.CommonFormats
 import com.scalasourcing.backend.{EventStorageSuite, Tester}
 
 class FirebaseEventStorageSuite extends EventStorageSuite

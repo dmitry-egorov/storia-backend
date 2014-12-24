@@ -33,10 +33,6 @@ object Tools
         def read[T](implicit f: Formats, m: Manifest[T]) = {
             Serialization.read[T](str)
         }
-
-        def readKey[T](implicit f: Formats, m: Manifest[T]) = {
-            Serialization.read[T](s""""$str"""")
-        }
     }
 
     implicit class RichAnyRef[T <: AnyRef](val cc: T) extends AnyVal

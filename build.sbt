@@ -35,3 +35,4 @@ lazy val worker = (project in file("worker")).
                   settings(organization := "com.pointswarm", name := "storia-worker", version := "0.0.1").
                   settings(libraryDependencies ++= storiaWorkerDependencies).
                   dependsOn(scalasourcing, tools, hellfire, futuristic, scalasourcingFirebase)
+

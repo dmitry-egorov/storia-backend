@@ -1,5 +1,6 @@
 package com.scalasourcing.model
 
+import com.scalasourcing.model.id.AggregateId
 import com.scalasourcing.tools.StringExtensions._
 
 trait Aggregate

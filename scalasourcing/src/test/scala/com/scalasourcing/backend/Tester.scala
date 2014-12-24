@@ -1,8 +1,14 @@
 package com.scalasourcing.backend
 
-import com.scalasourcing.model.{Aggregate, AggregateId}
+import com.scalasourcing.model.Aggregate
+import com.scalasourcing.model.id.{AggregateId, CompositeAggregateId, StringAggregateId}
 
-case class TesterId(value: String) extends AggregateId
+case class SubId1(value: String) extends StringAggregateId
+case class SubId2(value: String) extends StringAggregateId
+case class TesterId(subId1: SubId1, subId2: SubId2) extends CompositeAggregateId
+{
+    override def ids: Seq[AggregateId] = Seq(subId1, subId2)
+}
 
 object Tester extends Aggregate
 {
@@ -11,12 +17,12 @@ object Tester extends Aggregate
     case object SomethingHappened extends Event
     case object DoSomething extends Command
 
-    case object TesterState extends State
+    case object SomeState extends State
     {
-        def apply(event: Event) = TesterState
+        def apply(event: Event) = SomeState
         def apply(command: Command) = SomethingHappened
     }
 
-    def seed = TesterState
+    def seed = SomeState
 }
 

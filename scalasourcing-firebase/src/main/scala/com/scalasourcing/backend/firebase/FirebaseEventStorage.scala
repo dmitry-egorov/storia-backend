@@ -11,8 +11,12 @@ import scala.concurrent._
 
 class FirebaseEventStorage[A <: Aggregate](ag: A)(fb: Firebase)(implicit ec: ExecutionContext, f: Formats) extends EventStorage[A](ag)
 {
-    private lazy val aggregatesRef = fb / "aggregates" / a.name
+    private lazy val aggregatesVersionsRef = fb / "aggregateVersions" / a.name
+    private lazy val aggregatesIdsRef = fb / "aggregateIds" / a.name
     private lazy val aggregatesEventsRef = fb / "aggregateEvents" / a.name
+    private def aggregateEventsRef(id: a.Id): Firebase = aggregatesEventsRef / id.hash
+    private def aggregateVersionRef(id: a.Id): Firebase = aggregatesVersionsRef / id.hash
+    private def aggregateIdRef(id: a.Id): Firebase = aggregatesIdsRef / id.hash
 
     def get(id: a.Id): Future[a.EventsSeq] =
     {
@@ -24,46 +28,56 @@ class FirebaseEventStorage[A <: Aggregate](ag: A)(fb: Firebase)(implicit ec: Exe
 
     def tryPersist(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Boolean] =
     {
-        val versionRef = aggregateRef(id) / "version"
-        val eventsRef = aggregateEventsRef(id)
-
-        versionRef
-        .transaction[Int](
-                version =>
-                {
-                    val v = version.getOrElse(0)
-                    val newVersion = v + (events.length: java.lang.Integer)
-
-                    if (v == expectedVersion) Some(newVersion) else None
-                })
-        .flatMap(
-                committed =>
-                {
-                    if (committed)
-                    {
-                        events
-                        .zipWithIndex
-                        .map(e =>
-                             {
-                                 eventsRef / (expectedVersion + e._2) <-- e._1
-                             })
-                        .waitAll
-                        .map(_ => true)
-                    }
-                    else
-                    {
-                        Future.successful(false)
-                    }
-                })
+        for
+        {
+            committed <- tryCommitVersion(id, expectedVersion, events.length)
+            r <- trySaveEvents(id, events, expectedVersion, committed)
+        }
+        yield r
     }
 
-    private def aggregateEventsRef(id: a.Id): Firebase =
+    private def tryCommitVersion(id: a.Id, expectedVersion: Int, eventCount: Int): Future[Boolean] =
     {
-        aggregatesEventsRef / id
+        aggregateVersionRef(id)
+        .transaction[Int](v => tryGetNewVersion(expectedVersion, v.getOrElse(0), eventCount))
     }
 
-    private def aggregateRef(id: a.Id): Firebase =
+    private def trySaveEvents(id: a.Id, events: a.EventsSeq, expectedVersion: Int, committed: Boolean): Future[Boolean] =
     {
-        aggregatesRef / id
+        if (committed)
+        {
+            val fsa = saveId(id)
+            val fse = saveEvents(id, events, expectedVersion)
+
+            Seq(fsa, fse).waitAll.map(_ => true)
+        }
+        else Future.successful(false)
+    }
+
+    private def tryGetNewVersion(expectedVersion: Int, currentVersion: Int, count: Int): Option[Int] =
+    {
+        if (currentVersion == expectedVersion)
+            Some(currentVersion + count)
+        else
+            None
+    }
+
+    private def saveId(id: a.Id): Future[Unit] =
+    {
+        (aggregateIdRef(id) <-- id).map(_ => ())
+    }
+
+    private def saveEvents(id: a.Id, events: a.EventsSeq, expectedVersion: Int): Future[Unit] =
+    {
+        events
+        .zipWithIndex
+        .map(e => saveEvent(id, expectedVersion + e._2, e._1))
+        .waitAll
+    }
+
+    private def saveEvent(id: a.Id, eventIndex: Int, event: a.Event): Future[String] =
+    {
+        val index = eventIndex.toString
+        aggregateEventsRef(id) / index <-- event
     }
 }

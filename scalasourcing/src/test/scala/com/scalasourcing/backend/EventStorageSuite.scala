@@ -11,8 +11,8 @@ abstract class EventStorageSuite extends FunSuite with Matchers with ScalaFuture
     implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
     implicit val defaultPatience = PatienceConfig(Span(5, Seconds), Span(100, Millis))
 
-    val id1 = TesterId("1")
-    val id2 = TesterId("2")
+    val id1 = TesterId(SubId1("s11"), SubId2("s21"))
+    val id2 = TesterId(SubId1("s12"), SubId2("s22"))
 
     test("Should return empty messages when nothing was added")
     {
@@ -96,8 +96,7 @@ abstract class EventStorageSuite extends FunSuite with Matchers with ScalaFuture
 
             whenReady(f)
             {
-                events => events
-                          .length should equal(times)
+                events => events.length should equal(times)
             }
         }
     }

@@ -36,74 +36,82 @@ abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f:
     protected implicit val mi: Manifest[a.Id]
     protected implicit val me: Manifest[a.Event]
 
-    private val subscriptionsMap: TrieMap[a.Id, CancellationSource] = TrieMap.empty
+    private val subscriptionsMap: TrieMap[String, CancellationSource] = TrieMap.empty
 
-    private lazy val aggregatesRef = fb / "aggregates" / a.name
     private lazy val aggregatesEventsRef = fb / "aggregateEvents" / a.name
-    private lazy val projectionsRef = fb / "projections" / pr.name
-    private def lastVersionRefOf(id: a.Id): Firebase = projectionsRef / id / "lastVersion"
+    private lazy val aggregatesIdsRef = fb / "aggregateIds" / a.name
+    private lazy val projectionsVersionsRef = fb / "projectionVersions" / pr.name
+    private def lastVersionRefOf(id: a.Id): Firebase = projectionsVersionsRef / id.hash
+    private def aggregateEventsRef(id: a.Id): Firebase = aggregatesEventsRef / id.hash
 
     override def run(completeWith: CancellationToken): Observable[Try[AnyRef]] =
     {
-        aggregatesRef
-        .observeData[a.Id, AnyRef]
+        aggregatesIdsRef
+        .observeData[a.Id]
         .completeWith(completeWith)
         .flatMap
         {
             case Success(ds)  => ds match
             {
-                case DataAdded(id: a.Id, _) => subscribe(completeWith, id)
-                case DataRemoved(id: a.Id)  => removeSubscription(id)
-                case _                      => Observable.just(Success("Unknown event"))
+                case DataAdded(hash: String, id: a.Id) => subscribe(completeWith, id)
+                case DataRemoved(id: String)           => cancelSubscription(id)
+                case _                                 => Observable.just(Success("Unknown event"))
             }
             case x@Failure(_) => Observable.just(x)
         }
-
     }
-
 
     override def prepare(completeWith: CancellationToken): Future[Unit] = pr.prepare()
 
-    private def subscribe(completeWith: CancellationToken, aggId: a.Id): Observable[Try[AnyRef]] =
+    private def subscribe(complete: CancellationToken, aggId: a.Id): Observable[Try[AnyRef]] =
     {
-        val cancellation = new CancellationSource
-        subscriptionsMap(aggId) = cancellation
+        val cancellation = addSubscription(aggId.hash)
 
-        val lastVersionRef = lastVersionRefOf(aggId)
+        val anyToken = complete.and(cancellation)
 
-        lastVersionRef
-        .value[String]
+        lastVersionRefOf(aggId)
+        .value[Int]
         .observe
-        .flatMap(lastVersion =>
-                 {
-                     (aggregatesEventsRef / aggId)
-                     .orderByKey()
-                     .startAt(lastVersion.getOrElse("-1"))
-                     .observeAddedData[String, a.Event]
-                     .completeWith(completeWith)
-                     .completeWith(cancellation)
-                     .flatMapF
-                     {
-                         case Success(added) =>
-                             pr
-                             .consume(aggId, added.value)
-                             .recoverAsTry
-                             .flatMap(r =>
-                                          //Todo: Fix this. Probably won't work very well due to race conditions
-                                          (lastVersionRef <-- added.id).map(_ => r)
-                                 )
-                         case x              => Future.successful(x)
-                     }
-                 }
-            )
+        .map(v => v.getOrElse(0))
+        .flatMap(lastVersion => consume(anyToken, aggId, lastVersion))
     }
 
-    private def removeSubscription(id: a.Id): Observable[Try[AnyRef]] =
+    private def consume(complete: CancellationToken, aggId: a.Id, last: Int): Observable[Try[AnyRef]] =
+    {
+        aggregateEventsRef(aggId)
+        .orderByKey()
+        .startAt(last.toString)
+        .observeAddedData[a.Event]
+        .completeWith(complete)
+        .flatMapF
+        {
+            case Success(added) => consume(aggId, added.value, added.id.toInt)
+            case x              => Future.successful(x)
+        }
+    }
+
+    private def consume(aggId: a.Id, value: a.Event, eventId: Int): Future[Try[AnyRef]] =
+    {
+        for
+        {
+            r <- pr.consume(aggId, value).recoverAsTry
+            //Todo: Fix this. Due to race condition it won't always write last event id
+            _ <- lastVersionRefOf(aggId) <-- (eventId + 1)
+        } yield r
+    }
+
+    private def addSubscription(idHash: String): CancellationSource =
+    {
+        val cancellation = new CancellationSource
+        subscriptionsMap(idHash) = cancellation
+        cancellation
+    }
+
+    private def cancelSubscription(id: String): Observable[Try[AnyRef]] =
     {
         subscriptionsMap(id).cancel()
         subscriptionsMap.remove(id)
 
         Observable.just(Success("Removed subscription"))
     }
-
 }

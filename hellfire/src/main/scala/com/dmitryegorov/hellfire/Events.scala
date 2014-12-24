@@ -8,6 +8,6 @@ case class SnapChanged(ds: DataSnapshot) extends SnapEvent
 case class SnapRemoved(ds: DataSnapshot) extends SnapEvent
 
 sealed trait DataEvent
-case class DataAdded[I, V](id: I, value: V) extends DataEvent
-case class DataChanged[I, V](id: I, value: V) extends DataEvent
-case class DataRemoved[I](id: I) extends DataEvent
+case class DataAdded[V](id: String, value: V) extends DataEvent
+case class DataChanged[V](id: String, value: V) extends DataEvent
+case class DataRemoved(id: String) extends DataEvent

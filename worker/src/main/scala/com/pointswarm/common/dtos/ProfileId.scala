@@ -1,8 +1,8 @@
 package com.pointswarm.common.dtos
 
-import com.scalasourcing.model.AggregateId
+import com.scalasourcing.model.id.AggregateId
 
-case class ProfileId(value: String) extends AggregateId
+case class ProfileId(value: String)
 {
     assert(value != null && value.trim.nonEmpty)
     override def toString = value

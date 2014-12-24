@@ -63,21 +63,22 @@ abstract class FirebaseCommander(fb: Firebase)(implicit f: Formats, ec: Executio
 
     private def execute(id: CommandId, command: AggregateCommand[ag.Id, ag.Command]): Future[ag.Result] =
     {
+        val payload = command.payload
         for
         {
-            result <- es.execute(command.id, command.payload)
-            _ <- writeResult(id, result)
+            result <- es.execute(command.id, payload)
+            _ <- writeResult(id, payload, result)
             _ <- removeCommand(id)
         }
         yield result
     }
 
-    def writeResult(id: String, result: ag.Result) =
+    def writeResult(id: CommandId, command: ag.Command, result: ag.Result) =
     {
-        resultsRef / id <-- result
+        resultsRef / id <-- CommandResult(command, result)
     }
 
-    private def removeCommand(id: String) =
+    private def removeCommand(id: CommandId) =
     {
         inboxRef / id remove
     }

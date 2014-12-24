@@ -21,4 +21,9 @@ trait CancellationToken
 
         p.future
     }
+
+    def and(other: CancellationToken): CancellationToken =
+    {
+        new CompositeAnyToken(this, other)
+    }
 }

@@ -1,16 +1,13 @@
 package com.pointswarm.domain.reporting
 
-import com.pointswarm.common.dtos.{EventId, HtmlContent, ProfileId}
+import com.pointswarm.common.dtos.HtmlContent
+import com.pointswarm.domain.common.ReportIdAgg
 import com.scalasourcing.model._
 
-case class ReportId(userId: ProfileId, eventId: EventId) extends CompositeAggregateId
-{
-    val ids = Seq(userId, eventId)
-}
 
 object Report extends Aggregate
 {
-    type Id = ReportId
+    type Id = ReportIdAgg
 
     case class DoReport(content: HtmlContent) extends Command
 

@@ -1,4 +1,4 @@
-package com.scalasourcing.backend.firebase
+package com.scalasourcing.backend.firebase.domain
 
 import org.json4s._
 

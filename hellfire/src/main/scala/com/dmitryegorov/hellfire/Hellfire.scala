@@ -11,7 +11,7 @@ import rx.lang.scala._
 
 import scala.concurrent._
 import scala.concurrent.duration.Duration
-import scala.util.{Success, Try}
+import scala.util.Try
 
 object Hellfire
 {
@@ -83,12 +83,12 @@ object Hellfire
             }
         }
 
-        def observeAddedData[I: Manifest, V: Manifest](implicit f: Formats): Observable[Try[DataAdded[I, V]]] =
+        def observeAddedData[V: Manifest](implicit f: Formats): Observable[Try[DataAdded[V]]] =
         {
-            observeData[I, V]
+            observeData[V]
             .collect
             {
-                case x: Try[DataAdded[I, V]] => x
+                case x: Try[DataAdded[V]] => x
             }
         }
 
@@ -108,20 +108,19 @@ object Hellfire
                     })
         }
 
-        def observeData[I: Manifest, V: Manifest](implicit f: Formats): Observable[Try[DataEvent]] =
+        def observeData[V: Manifest](implicit f: Formats): Observable[Try[DataEvent]] =
         {
             observe.map
             {
-                case SnapAdded(ds)   => Try(DataAdded[I, V](ds.getKey.readKey[I], ds.value[V].get))
-                case SnapChanged(ds) => Try(DataChanged[I, V](ds.getKey.readKey[I], ds.value[V].get))
-                case SnapRemoved(ds) => Try(DataRemoved[I](ds.getKey.readKey[I]))
+                case SnapAdded(ds)   => Try(DataAdded[V](ds.getKey, ds.value[V].get))
+                case SnapChanged(ds) => Try(DataChanged[V](ds.getKey, ds.value[V].get))
+                case SnapRemoved(ds) => Try(DataRemoved(ds.getKey))
             }
         }
     }
 
     implicit class RichFirebase(val ref: Firebase) extends AnyVal
     {
-        def /(path: Any) = ref.child(path.toString)
         def /(path: String) = ref.child(path)
 
         def newKey: String = ref.push().getKey

@@ -9,7 +9,6 @@ import com.dmitryegorov.hellfire.Hellfire._
 import com.dmitryegorov.tools.elastic.Client
 import com.dmitryegorov.tools.extensions.ThrowableExtensions._
 import com.firebase.client.Firebase
-import com.pointswarm.common.format._
 import com.pointswarm.domain.reporting.Report
 import com.pointswarm.domain.voting.Upvote
 import com.pointswarm.fireLegion.ArmyAnnouncer._
@@ -41,7 +40,7 @@ object WorkerApp extends App
 
     val fb = new Firebase(WorkerConfig.fbUrl)
 
-    val dddRef = fb / "es"
+    val esRef = fb / "es"
     val elastic = new Client(WorkerConfig.elasticUrl)
 
     val conquest = runMaster
@@ -62,7 +61,7 @@ object WorkerApp extends App
     {
         val searcher = new Searcher(elastic)
         val elasticAddEvent = new EventStretcher(elastic)
-        val elasticAddReport = new ReportStretcher(elastic)
+//        val elasticAddReport = new ReportStretcher(elastic)
         val eventViewGenerator = new EventViewGenerator(fb)
         val reportViewGenerator = new ReportViewGenerator(fb)
         val reportsSorter = new ReportsSorter(fb)
@@ -75,7 +74,7 @@ object WorkerApp extends App
             .recruitDistributor
             .recruit(searcher)
             .recruit(elasticAddEvent)
-            .recruit(elasticAddReport)
+//            .recruit(elasticAddReport)
             .recruit(eventViewGenerator)
             .recruit(reportViewGenerator)
             .recruit(reportsSorter)
@@ -94,7 +93,7 @@ object WorkerApp extends App
 
     def runExecutor: Future[Unit] =
     {
-        FirebaseExecutorsBuilder(dddRef)
+        FirebaseExecutorsBuilder(esRef)
         .aggregate(Report)
         .aggregate(Upvote)
         .projection(Report)(new ReportStretchingProjection(elastic))

@@ -1,17 +1,11 @@
 package com.pointswarm.domain.voting
 
-import com.pointswarm.common.dtos.ProfileId
-import com.pointswarm.domain.reporting.ReportId
-import com.scalasourcing.model.{Aggregate, CompositeAggregateId}
-
-case class UpvoteId(userId: ProfileId, reportId: ReportId) extends CompositeAggregateId
-{
-    val ids = Seq(userId, reportId)
-}
+import com.pointswarm.domain.common.UpvoteIdAgg
+import com.scalasourcing.model.Aggregate
 
 object Upvote extends Aggregate
 {
-    type Id = UpvoteId
+    type Id = UpvoteIdAgg
 
     case object Cast extends Command
     case object Cancel extends Command

@@ -1,7 +1,7 @@
-package com.scalasourcing.backend.firebase
+package com.scalasourcing.backend.firebase.domain
 
-import com.firebase.client.Firebase
 import com.dmitryegorov.hellfire.Hellfire._
+import com.firebase.client.Firebase
 import com.scalasourcing.backend.Tester
 import com.scalasourcing.backend.Tester.SomethingHappened
 import com.scalasourcing.model.Projection
@@ -13,7 +13,7 @@ class TesterProjection(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) 
 {
     override def consume(id: a.Id, event: a.Event): Future[AnyRef] = event match
     {
-        case SomethingHappened => fb / "views" / "tester" / id <-- true
+        case SomethingHappened => fb / "views" / "tester" / id.hash <-- true
     }
 
     override def prepare(): Future[Unit] = Future.successful(())

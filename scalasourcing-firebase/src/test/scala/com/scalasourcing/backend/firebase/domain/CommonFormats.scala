@@ -1,9 +1,9 @@
-package com.scalasourcing.backend.firebase
+package com.scalasourcing.backend.firebase.domain
 
+import com.scalasourcing.backend.{SubId2, SubId1}
 import com.scalasourcing.backend.Tester.{DoSomething, SomethingHappened}
-import com.scalasourcing.backend.TesterId
-import com.scalasourcing.backend.firebase.SingleStringCaseClassSerializer._
 import org.json4s.{DefaultFormats, Formats, ShortTypeHints}
+import SingleStringCaseClassSerializer._
 
 object CommonFormats
 {
@@ -12,5 +12,5 @@ object CommonFormats
         val dateFormat = DefaultFormats.lossless.dateFormat
         override val typeHints = ShortTypeHints(List(SomethingHappened.getClass, DoSomething.getClass))
         override val typeHintFieldName = "t"
-    } + SingleStringCaseClassSerializer[TesterId]()
+    } + SingleStringCaseClassSerializer[SubId1]() + SingleStringCaseClassSerializer[SubId2]()
 }
