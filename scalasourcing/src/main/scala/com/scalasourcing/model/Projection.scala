@@ -3,9 +3,9 @@ package com.scalasourcing.model
 import com.scalasourcing.tools.StringExtensions._
 import scala.concurrent.Future
 
-abstract class Projection[A <: Aggregate](val a: A)
+trait Projection[A <: Aggregate]
 {
     def name = getClass.getSimpleName.replace("$", "").decapitalize
-    def consume(id: a.Id, event: a.Event): Future[AnyRef]
-    def prepare(): Future[Unit]
+    def project(id: A#Id, event: A#Event, eventIndex: Int): Future[AnyRef]
+    def prepare(): Future[Unit] = Future.successful(())
 }

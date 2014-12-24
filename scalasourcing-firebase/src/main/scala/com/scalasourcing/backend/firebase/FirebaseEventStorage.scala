@@ -40,6 +40,7 @@ class FirebaseEventStorage[A <: Aggregate](ag: A)(fb: Firebase)(implicit ec: Exe
     {
         aggregateVersionRef(id)
         .transaction[Int](v => tryGetNewVersion(expectedVersion, v.getOrElse(0), eventCount))
+        .map(x => x.committed)
     }
 
     private def trySaveEvents(id: a.Id, events: a.EventsSeq, expectedVersion: Int, committed: Boolean): Future[Boolean] =

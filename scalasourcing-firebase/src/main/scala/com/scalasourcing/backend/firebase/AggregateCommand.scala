@@ -1,3 +1,5 @@
 package com.scalasourcing.backend.firebase
 
-case class AggregateCommand[Id, Payload](id: Id, payload: Payload)
+import org.joda.time.DateTime
+
+case class AggregateCommand[Id, Payload](id: Id, payload: Payload, addedOn: DateTime)

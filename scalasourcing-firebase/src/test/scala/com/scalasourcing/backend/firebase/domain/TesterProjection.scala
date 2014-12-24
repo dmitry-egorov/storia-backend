@@ -9,12 +9,10 @@ import org.json4s.Formats
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TesterProjection(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Projection(Tester)
+class TesterProjection(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Projection[Tester.type]
 {
-    override def consume(id: a.Id, event: a.Event): Future[AnyRef] = event match
+    override def project(id: Tester.Id, event: Tester.Event, eventIndex: Int): Future[AnyRef] = event match
     {
         case SomethingHappened => fb / "views" / "tester" / id.hash <-- true
     }
-
-    override def prepare(): Future[Unit] = Future.successful(())
 }

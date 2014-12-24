@@ -12,5 +12,5 @@ object CommonFormats
         val dateFormat = DefaultFormats.lossless.dateFormat
         override val typeHints = ShortTypeHints(List(SomethingHappened.getClass, DoSomething.getClass))
         override val typeHintFieldName = "t"
-    } + SingleStringCaseClassSerializer[SubId1]() + SingleStringCaseClassSerializer[SubId2]()
+    } + SingleStringCaseClassSerializer[SubId1]() + SingleStringCaseClassSerializer[SubId2]() + new DateTimeSerializer()
 }

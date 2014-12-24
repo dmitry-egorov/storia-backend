@@ -26,4 +26,6 @@ trait CancellationToken
     {
         new CompositeAnyToken(this, other)
     }
+
+    def +(other: CancellationToken): CancellationToken = and(other)
 }

@@ -2,27 +2,27 @@ package com.pointswarm.application
 
 import java.lang.System.err
 
-import com.dmitryegorov.futuristic.ObservableExtensions._
 import com.dmitryegorov.futuristic.FutureExtensions._
+import com.dmitryegorov.futuristic.ObservableExtensions._
 import com.dmitryegorov.futuristic.cancellation.CancellationSource
 import com.dmitryegorov.hellfire.Hellfire._
 import com.dmitryegorov.tools.elastic.Client
 import com.dmitryegorov.tools.extensions.ThrowableExtensions._
 import com.firebase.client.Firebase
-import com.pointswarm.domain.reporting.Report
+import com.pointswarm.domain.reporting.{Event, Report}
 import com.pointswarm.domain.voting.Upvote
 import com.pointswarm.fireLegion.ArmyAnnouncer._
 import com.pointswarm.fireLegion._
-import com.pointswarm.minions.eventStretcher._
 import com.pointswarm.minions.eventViewGenerator.EventViewGenerator
 import com.pointswarm.minions.paparazzi.Paparazzi
 import com.pointswarm.minions.registrator.Registrator
-import com.pointswarm.minions.reportStreacher.ReportStretcher
 import com.pointswarm.minions.reportViewGenerator._
 import com.pointswarm.minions.reportsSorter._
 import com.pointswarm.minions.searcher.Searcher
 import com.pointswarm.minions.voter._
-import com.pointswarm.projections.ReportStretchingProjection
+import com.pointswarm.projections.event._
+import com.pointswarm.projections.home._
+import com.pointswarm.projections.search._
 import com.scalasourcing.backend.firebase.FirebaseExecutorsBuilder
 
 import scala.concurrent._
@@ -41,6 +41,7 @@ object WorkerApp extends App
     val fb = new Firebase(WorkerConfig.fbUrl)
 
     val esRef = fb / "es"
+    val viewsRef = fb / "views"
     val elastic = new Client(WorkerConfig.elasticUrl)
 
     val conquest = runMaster
@@ -60,8 +61,6 @@ object WorkerApp extends App
     def runMaster: Future[Unit] =
     {
         val searcher = new Searcher(elastic)
-        val elasticAddEvent = new EventStretcher(elastic)
-//        val elasticAddReport = new ReportStretcher(elastic)
         val eventViewGenerator = new EventViewGenerator(fb)
         val reportViewGenerator = new ReportViewGenerator(fb)
         val reportsSorter = new ReportsSorter(fb)
@@ -73,8 +72,6 @@ object WorkerApp extends App
             Master(fb)
             .recruitDistributor
             .recruit(searcher)
-            .recruit(elasticAddEvent)
-//            .recruit(elasticAddReport)
             .recruit(eventViewGenerator)
             .recruit(reportViewGenerator)
             .recruit(reportsSorter)
@@ -96,7 +93,15 @@ object WorkerApp extends App
         FirebaseExecutorsBuilder(esRef)
         .aggregate(Report)
         .aggregate(Upvote)
-        .projection(Report)(new ReportStretchingProjection(elastic))
+        .aggregate(Event)
+        .projection(Event)(new EventStretcher(elastic))
+        .projection(Report)(new ReportStretcher(elastic))
+        .projection(Event)(new HomeViewEventsBuilder(viewsRef))
+        .projection(Report)(new HomeViewReportsBuilder(viewsRef))
+        .projection(Upvote)(new HomeViewUpvotesBuilder(viewsRef))
+        .projection(Event)(new EventViewEventsBuilder(viewsRef))
+        .projection(Report)(new EventViewReportsBuilder(viewsRef))
+        .projection(Upvote)(new EventViewUpvotesBuilder(viewsRef))
         .build
         .run(cancellation)
         .doOnNext

@@ -63,17 +63,17 @@ abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f:
 
     override def prepare(completeWith: CancellationToken): Future[Unit] = pr.prepare()
 
-    private def subscribe(complete: CancellationToken, aggId: a.Id): Observable[Try[AnyRef]] =
+    private def subscribe(globalComplete: CancellationToken, aggId: a.Id): Observable[Try[AnyRef]] =
     {
-        val cancellation = addSubscription(aggId.hash)
+        val localComplete = addSubscription(aggId.hash)
 
-        val anyToken = complete.and(cancellation)
+        val complete = globalComplete + localComplete
 
         lastVersionRefOf(aggId)
         .value[Int]
         .observe
         .map(v => v.getOrElse(0))
-        .flatMap(lastVersion => consume(anyToken, aggId, lastVersion))
+        .flatMap(lastVersion => consume(complete, aggId, lastVersion))
     }
 
     private def consume(complete: CancellationToken, aggId: a.Id, last: Int): Observable[Try[AnyRef]] =
@@ -94,9 +94,9 @@ abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f:
     {
         for
         {
-            r <- pr.consume(aggId, value).recoverAsTry
-            //Todo: Fix this. Due to race condition it won't always write last event id
-            _ <- lastVersionRefOf(aggId) <-- (eventId + 1)
+            r <- pr.project(aggId, value, eventId).recoverAsTry
+            //Todo: what will happen if events are lost?
+            _ <- lastVersionRefOf(aggId).transaction[Int](x => if(x.getOrElse(-1) <= eventId) Some(eventId + 1) else None)
         } yield r
     }
 

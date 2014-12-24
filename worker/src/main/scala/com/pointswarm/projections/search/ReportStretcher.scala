@@ -1,4 +1,4 @@
-package com.pointswarm.projections
+package com.pointswarm.projections.search
 
 import com.dmitryegorov.tools.elastic.Client
 import com.pointswarm.common.dtos.EventId
@@ -11,9 +11,9 @@ import org.json4s.Formats
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReportStretchingProjection(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Projection(Report)
+class ReportStretcher(elastic: Client)(implicit f: Formats, ec: ExecutionContext) extends Projection[Report.type]
 {
-    def consume(id: a.Id, event: a.Event): Future[AnyRef] =
+    def project(id: Report.Id, event: Report.Event, eventIndex: Int): Future[AnyRef] =
     {
         val content = event match
         {
@@ -21,11 +21,10 @@ class ReportStretchingProjection(elastic: Client)(implicit f: Formats, ec: Execu
             case Edited(c) => c
         }
 
-        val docId = id.eventId + "_" + id.authorId
-        val textEntry = TextIndexEntryView(new EventId(id.eventId.value), content)
+        val textEntry = TextIndexEntryView(EventId(id.eventId.value), content)
 
-        elastic index "texts" doc("text", docId, textEntry) map(_ => docId)
+        elastic index "texts" doc("text", id.hash, textEntry) map (_ => s"Stretched report '$id'")
     }
 
-    def prepare(): Future[Unit] = Migrator.createTextIndex(elastic)
+    override def prepare(): Future[Unit] = Migrator.createTextIndex(elastic)
 }

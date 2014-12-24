@@ -5,7 +5,9 @@ import com.dmitryegorov.tools.serialization._
 import com.pointswarm.commands.ProviderType
 import com.pointswarm.common.dtos._
 import com.pointswarm.domain.common.{ProfileIdAgg, EventIdAgg}
-import com.pointswarm.domain.reporting.Report.{Added, DoReport, Edited}
+import com.pointswarm.domain.reporting.Event.{AlreadyExists, Created, Create}
+import com.pointswarm.domain.reporting.Report._
+import com.pointswarm.domain.voting.Upvote._
 import com.pointswarm.fireLegion._
 import org.json4s._
 import org.json4s.ext.EnumNameSerializer
@@ -20,7 +22,19 @@ object CommonFormats
                            ShortTypeHints(List(
                                classOf[DoReport],
                                classOf[Added],
-                               classOf[Edited]
+                               classOf[Edited],
+                               ContentIsTheSame.getClass,
+
+                               classOf[Create],
+                               classOf[Created],
+                               AlreadyExists.getClass,
+
+                               Cast.getClass,
+                               Cancel.getClass,
+                               Casted.getClass,
+                               Cancelled.getClass,
+                               WasAlreadyCastedError.getClass,
+                               WasNotCastedError.getClass
                            )) +
                            SingleStringCaseClassSerializer[CommandName]() +
                            SingleStringCaseClassSerializer[MinionName]() +

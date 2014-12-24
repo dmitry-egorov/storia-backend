@@ -8,6 +8,7 @@ import com.firebase.client._
 import com.scalasourcing.backend._
 import com.scalasourcing.model.Aggregate
 import com.scalasourcing.model.Aggregate.AggregateResult
+import org.joda.time.{DateTimeZone, DateTime}
 import org.json4s.Formats
 import rx.lang.scala.Observable
 
@@ -67,15 +68,15 @@ abstract class FirebaseCommander(fb: Firebase)(implicit f: Formats, ec: Executio
         for
         {
             result <- es.execute(command.id, payload)
-            _ <- writeResult(id, payload, result)
+            _ <- writeResult(id, payload, command.addedOn, result)
             _ <- removeCommand(id)
         }
         yield result
     }
 
-    def writeResult(id: CommandId, command: ag.Command, result: ag.Result) =
+    def writeResult(id: CommandId, command: ag.Command, addedOn: DateTime, result: ag.Result) =
     {
-        resultsRef / id <-- CommandResult(command, result)
+        resultsRef / id <-- CommandResult(command, result, addedOn, DateTime.now(DateTimeZone.UTC))
     }
 
     private def removeCommand(id: CommandId) =

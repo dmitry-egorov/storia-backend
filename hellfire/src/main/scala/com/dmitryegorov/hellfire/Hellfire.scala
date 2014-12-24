@@ -157,9 +157,9 @@ object Hellfire
             p.future
         }
 
-        def transaction[T: Manifest](f: Option[T] => Option[T])(implicit fmt: Formats): Future[Boolean] =
+        def transaction[T: Manifest](f: Option[T] => Option[T])(implicit fmt: Formats): Future[TransactionResult[T]] =
         {
-            val p = Promise[Boolean]()
+            val p = Promise[TransactionResult[T]]()
 
             ref.runTransaction(createTransactionHandler(f, p))
 
@@ -234,7 +234,7 @@ object Hellfire
         }
     }
 
-    private def createTransactionHandler[T: Manifest](f: (Option[T]) => Option[T], p: Promise[Boolean])(implicit fmt: Formats): Handler =
+    private def createTransactionHandler[T: Manifest](f: (Option[T]) => Option[T], p: Promise[TransactionResult[T]])(implicit fmt: Formats): Handler =
     {
         new Handler
         {
@@ -256,7 +256,7 @@ object Hellfire
             {
                 if (firebaseError == null)
                 {
-                    p.success(committed)
+                    p.success(new TransactionResult[T](committed, extract(dataSnapshot.getValue)))
                 }
                 else
                 {
@@ -270,4 +270,6 @@ object Hellfire
     {
         Option(value).map(x => x.fromJavaToJValue.extract[T])
     }
+
+    case class TransactionResult[T](committed: Boolean, finalData: Option[T])
 }

@@ -10,6 +10,7 @@ import com.scalasourcing.backend._
 import com.scalasourcing.backend.firebase.ThrowableExtensions._
 import com.scalasourcing.backend.Tester._
 import com.scalasourcing.backend.firebase.domain._
+import org.joda.time.{DateTimeZone, DateTime}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
@@ -46,7 +47,7 @@ class FirebaseExecutorSuite extends FunSuite with Matchers with ScalaFutures
         val f =
             for
             {
-                _ <- rootRef / "inbox" / commandId <-- AggregateCommand(rootId, DoSomething)
+                _ <- rootRef / "inbox" / commandId <-- AggregateCommand(rootId, DoSomething, DateTime.now(DateTimeZone.UTC))
                 result <- (rootRef / "results" / commandId / "result").awaitValue[Seq[SomethingHappened.type]]()
                 events <- (fb / "aggregateEvents" / "tester" / rootId.hash).awaitValue[Seq[SomethingHappened.type]]()
                 view <- (fb / "views" / "tester" / rootId.hash).awaitValue[Boolean]()

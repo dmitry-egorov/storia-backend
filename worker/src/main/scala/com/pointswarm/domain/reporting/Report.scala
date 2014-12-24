@@ -4,7 +4,6 @@ import com.pointswarm.common.dtos.HtmlContent
 import com.pointswarm.domain.common.ReportIdAgg
 import com.scalasourcing.model._
 
-
 object Report extends Aggregate
 {
     type Id = ReportIdAgg
