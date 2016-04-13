@@ -6,8 +6,8 @@ import rx.lang.scala.Observable
 import scala.concurrent.Future
 import scala.util.Try
 
-trait Executor[+T]
+trait Executor
 {
-    def run(completeWith: CancellationToken): Observable[Try[T]]
+    def run(completeWith: CancellationToken): Observable[Try[ExecutionResult]]
     def prepare(completeWith: CancellationToken) : Future[Unit]
 }

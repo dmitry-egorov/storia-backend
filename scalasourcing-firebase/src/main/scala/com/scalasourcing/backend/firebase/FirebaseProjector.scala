@@ -6,7 +6,7 @@ import com.dmitryegorov.futuristic.cancellation._
 import com.dmitryegorov.hellfire.Hellfire._
 import com.dmitryegorov.hellfire._
 import com.firebase.client.Firebase
-import com.scalasourcing.backend.Executor
+import com.scalasourcing.backend.{Executor, ProjectionExecutionResult}
 import com.scalasourcing.model._
 import org.json4s.Formats
 import rx.lang.scala.Observable
@@ -29,7 +29,7 @@ object FirebaseProjector
     }
 }
 
-abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f: Formats) extends Executor[AnyRef]
+abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f: Formats) extends Executor
 {
     protected val a: Aggregate
     protected val pr: Projection[a.type]
@@ -44,26 +44,21 @@ abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f:
     private def lastVersionRefOf(id: a.Id): Firebase = projectionsVersionsRef / id.hash
     private def aggregateEventsRef(id: a.Id): Firebase = aggregatesEventsRef / id.hash
 
-    override def run(completeWith: CancellationToken): Observable[Try[AnyRef]] =
+    override def run(completeWith: CancellationToken): Observable[Try[ProjectionExecutionResult[a.type]]] =
     {
         aggregatesIdsRef
-        .observeData[a.Id]
+        .observeAddedData[a.Id]
         .completeWith(completeWith)
         .flatMap
         {
-            case Success(ds)  => ds match
-            {
-                case DataAdded(hash: String, id: a.Id) => subscribe(completeWith, id)
-                case DataRemoved(id: String)           => cancelSubscription(id)
-                case _                                 => Observable.just(Success("Unknown event"))
-            }
-            case x@Failure(_) => Observable.just(x)
+            case Success(DataAdded(hash, id)) => subscribe(completeWith, id)
+            case Failure(error) => Observable.just(Failure(error))
         }
     }
 
     override def prepare(completeWith: CancellationToken): Future[Unit] = pr.prepare()
 
-    private def subscribe(globalComplete: CancellationToken, aggId: a.Id): Observable[Try[AnyRef]] =
+    private def subscribe(globalComplete: CancellationToken, aggId: a.Id): Observable[Try[ProjectionExecutionResult[a.type]]] =
     {
         val localComplete = addSubscription(aggId.hash)
 
@@ -76,7 +71,7 @@ abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f:
         .flatMap(lastVersion => consume(complete, aggId, lastVersion))
     }
 
-    private def consume(complete: CancellationToken, aggId: a.Id, last: Int): Observable[Try[AnyRef]] =
+    private def consume(complete: CancellationToken, aggId: a.Id, last: Int): Observable[Try[ProjectionExecutionResult[a.type]]] =
     {
         aggregateEventsRef(aggId)
         .orderByKey()
@@ -86,17 +81,18 @@ abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f:
         .flatMapF
         {
             case Success(added) => consume(aggId, added.value, added.id.toInt)
-            case x              => Future.successful(x)
+            case Failure(error) => Future.successful(Failure[ProjectionExecutionResult[a.type]](error))
         }
     }
 
-    private def consume(aggId: a.Id, value: a.Event, eventId: Int): Future[Try[AnyRef]] =
+    private def consume(aggId: a.Id, event: a.Event, eventId: Int): Future[Try[ProjectionExecutionResult[a.type]]] =
     {
         for
         {
-            r <- pr.project(aggId, value, eventId).recoverAsTry
+            r <- pr.project(aggId, event, eventId).map(ProjectionExecutionResult[a.type](aggId, event, pr.name, _)).recoverAsTry
             //Todo: what will happen if events are lost?
-            _ <- lastVersionRefOf(aggId).transaction[Int](x => if(x.getOrElse(-1) <= eventId) Some(eventId + 1) else None)
+            _ <- lastVersionRefOf(aggId).transaction[Int](x => if (x.getOrElse(-1) <= eventId) Some(eventId + 1)
+            else None)
         } yield r
     }
 
@@ -115,3 +111,5 @@ abstract class FirebaseProjector(fb: Firebase)(implicit ec: ExecutionContext, f:
         Observable.just(Success("Removed subscription"))
     }
 }
+
+

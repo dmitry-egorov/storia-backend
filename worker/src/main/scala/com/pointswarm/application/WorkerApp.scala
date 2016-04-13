@@ -9,7 +9,8 @@ import com.dmitryegorov.hellfire.Hellfire._
 import com.dmitryegorov.tools.elastic.Client
 import com.dmitryegorov.tools.extensions.ThrowableExtensions._
 import com.firebase.client.Firebase
-import com.pointswarm.domain.reporting.{Event, Report}
+import com.pointswarm.domain.profiling._
+import com.pointswarm.domain.reporting._
 import com.pointswarm.domain.voting.Upvote
 import com.pointswarm.fireLegion.ArmyAnnouncer._
 import com.pointswarm.fireLegion._
@@ -20,10 +21,15 @@ import com.pointswarm.minions.reportViewGenerator._
 import com.pointswarm.minions.reportsSorter._
 import com.pointswarm.minions.searcher.Searcher
 import com.pointswarm.minions.voter._
+import com.pointswarm.projections.common._
 import com.pointswarm.projections.event._
+import com.pointswarm.projections.eventAliases._
 import com.pointswarm.projections.home._
+import com.pointswarm.projections.profileAliasToId._
+import com.pointswarm.projections.profiles._
 import com.pointswarm.projections.search._
 import com.scalasourcing.backend.firebase.FirebaseExecutorsBuilder
+import com.scalasourcing.backend._
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -90,26 +96,50 @@ object WorkerApp extends App
 
     def runExecutor: Future[Unit] =
     {
+        val authorViewLoader = new AuthorViewLoader(viewsRef)
+        val eventAliasStorage = new EventAliasStorage(viewsRef)
+        val profileAliasStorage = new ProfileAliasStorage(viewsRef)
+
         FirebaseExecutorsBuilder(esRef)
+
+        .aggregate(Profile)
+        .aggregate(Event)
         .aggregate(Report)
         .aggregate(Upvote)
-        .aggregate(Event)
+
+        .projection(Profile)(new ProfileAliasToIdBuilder(viewsRef))
+
+        .projection(Profile)(new ProfileInfoBuilder(viewsRef, profileAliasStorage))
+        .projection(Profile)(new ProfilePaparazzi(viewsRef))
+        .projection(Report)(new ProfileReportsBuilder(viewsRef))
+
+        .projection(Event)(new HomeViewEventsBuilder(viewsRef, eventAliasStorage))
+        .projection(Report)(new HomeViewReportsBuilder(viewsRef, authorViewLoader))
+        .projection(Upvote)(new HomeViewUpvotesBuilder(viewsRef))
+
+        .projection(Event)(new EventAliasesBuilder(eventAliasStorage))
+
+        .projection(Event)(new EventViewEventsBuilder(viewsRef, eventAliasStorage))
+        .projection(Report)(new EventViewReportsBuilder(viewsRef, eventAliasStorage, profileAliasStorage, authorViewLoader))
+        .projection(Upvote)(new EventViewUpvotesBuilder(viewsRef, eventAliasStorage, profileAliasStorage))
+
         .projection(Event)(new EventStretcher(elastic))
         .projection(Report)(new ReportStretcher(elastic))
-        .projection(Event)(new HomeViewEventsBuilder(viewsRef))
-        .projection(Report)(new HomeViewReportsBuilder(viewsRef))
-        .projection(Upvote)(new HomeViewUpvotesBuilder(viewsRef))
-        .projection(Event)(new EventViewEventsBuilder(viewsRef))
-        .projection(Report)(new EventViewReportsBuilder(viewsRef))
-        .projection(Upvote)(new EventViewUpvotesBuilder(viewsRef))
-        .build
-        .run(cancellation)
+
+        .build.run(cancellation)
+
         .doOnNext
         {
-            case Success(Left(result)) => println(s"Command executed: $result")
-            case Success(Right(error)) => err.println(s"Command execution error: $error")
-            case Success(event)        => println(s"Event processed: $event")
-            case Failure(exception)    => err.println(s"Command execution exception: ${exception.fullMessage }")
+            case Success(executionResult) => executionResult match
+            {
+                case CommandExecutionResult(id, command, result, _, _) => result match
+                {
+                    case Left(events) => println(s"Executed command '$command' of '$id' with '$events'")
+                    case Right(error) => err.println(s"Command '$command' of '$id' rejected with '$error'")
+                }
+                case ProjectionExecutionResult(id, event, name, result) => println(s"'$name' projected event '$event' of '$id' with '$result'")
+            }
+            case Failure(exception)       => err.println(s"Execution exception: ${exception.fullMessage }")
         }
         .await
     }

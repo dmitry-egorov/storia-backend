@@ -5,7 +5,7 @@ import scala.concurrent.Future
 
 trait Projection[A <: Aggregate]
 {
-    def name = getClass.getSimpleName.replace("$", "").decapitalize
+    lazy val name = getClass.getSimpleName.replace("$", "").decapitalize
     def project(id: A#Id, event: A#Event, eventIndex: Int): Future[AnyRef]
     def prepare(): Future[Unit] = Future.successful(())
 }

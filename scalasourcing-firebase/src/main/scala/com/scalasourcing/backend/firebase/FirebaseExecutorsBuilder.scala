@@ -7,7 +7,7 @@ import org.json4s.Formats
 
 import scala.concurrent.ExecutionContext
 
-case class FirebaseExecutorsBuilder(fb: Firebase, executors: Seq[Executor[Any]] = Seq.empty)(implicit f: Formats, ec: ExecutionContext)
+case class FirebaseExecutorsBuilder(fb: Firebase, executors: Seq[Executor] = Seq.empty)(implicit f: Formats, ec: ExecutionContext)
 {
     def aggregate(agg: Aggregate)(implicit mi: Manifest[agg.Id], mc: Manifest[agg.Command]): FirebaseExecutorsBuilder =
     {
@@ -24,10 +24,10 @@ case class FirebaseExecutorsBuilder(fb: Firebase, executors: Seq[Executor[Any]] 
         executor(projector)
     }
     
-    def executor(e: Executor[Any]): FirebaseExecutorsBuilder =
+    def executor(e: Executor): FirebaseExecutorsBuilder =
     {
         copy(executors = executors ++ Seq(e))
     }
 
-    def build = new CompositeExecutor[Any](executors)
+    def build = new CompositeExecutor(executors)
 }

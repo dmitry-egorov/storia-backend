@@ -1,43 +1,48 @@
 package com.pointswarm.projections.event
 
-import com.dmitryegorov.tools.extensions.SanitizeExtensions._
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
-import com.pointswarm.domain.common.{ReportIdAgg, EventIdAgg}
+import com.pointswarm.common.dtos.Alias
 import com.pointswarm.domain.voting.Upvote
 import com.pointswarm.domain.voting.Upvote._
+import com.pointswarm.projections.common.{EventAliasStorage, ProfileAliasStorage}
 import com.scalasourcing.model.Projection
 import org.json4s.Formats
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EventViewUpvotesBuilder(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Projection[Upvote.type]
- {
-     private lazy val eventsRef: Firebase = fb / "events"
-     private def eventRefOf(eventId: EventIdAgg): Firebase = eventsRef / eventId.value.sanitize
-     private def reportRefOf(reportId: ReportIdAgg): Firebase = eventRefOf(reportId.eventId) / "reports" / reportId.authorId
+class EventViewUpvotesBuilder(fb: Firebase, eventAliasStorage: EventAliasStorage, profileAliasStorage: ProfileAliasStorage)(implicit f: Formats, ec: ExecutionContext) extends Projection[Upvote.type]
+{
+    private lazy val eventsRef: Firebase = fb / "events"
+    private def eventRefOf(alias: Alias): Firebase = eventsRef / alias
+    private def reportRefOf(alias: Alias, authorAlias: Alias): Firebase = eventRefOf(alias) / "reports" / authorAlias
 
-     def project(id: Id, event: Event, eventIndex: Int): Future[AnyRef] =
-     {
-         val casted = event match
-         {
-             case Casted    => +1
-             case Cancelled => -1
-         }
+    def project(id: Id, event: Event, eventIndex: Int): Future[AnyRef] =
+    {
+        val casted = event match
+        {
+            case Casted    => +1
+            case Cancelled => -1
+        }
 
-         for
-         {
-             r <-
-                 updateUpvote(id.reportId, casted)
-                 .map(total => s"Event view '${id.reportId.eventId}': upvote of report of '${id.reportId.authorId}' updated by '$casted' to $total")
-         }
-             yield r
-     }
+        val eventId = id.reportId.eventId
+        val authorId = id.reportId.authorId
 
-     def updateUpvote(reportId: ReportIdAgg, increment: Int): Future[Int] =
-     {
-         (reportRefOf(reportId) / "upvotes")
-         .transaction[Int](c => Some(c.getOrElse(0) + increment))
-         .map(tr => tr.finalData.get)
-     }
- }
+        val f1 = eventAliasStorage.getAliasOf(eventId)
+        val f2 = profileAliasStorage.getAliasOf(authorId)
+        for
+        {
+            eventAlias <- f1
+            authorAlias <- f2
+            total <- updateUpvote(eventAlias, authorAlias, casted)
+        }
+        yield s"Event view '$eventId': upvote of report of '$authorId' updated by '$casted' to $total"
+    }
+
+    def updateUpvote(eventAlias: Alias, authorAlias: Alias, increment: Int): Future[Int] =
+    {
+        (reportRefOf(eventAlias, authorAlias) / "upvotes")
+        .transaction[Int](c => Some(c.getOrElse(0) + increment))
+        .map(tr => tr.finalData.get)
+    }
+}

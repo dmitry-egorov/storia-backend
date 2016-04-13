@@ -1,40 +1,42 @@
-package com.pointswarm.minions.paparazzi
+package com.pointswarm.projections.profiles
 
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client.Firebase
 import com.ning.http.client.Response
-import com.pointswarm.commands.FindSocialPictureCommand
 import com.pointswarm.common.ProviderType
 import ProviderType._
-import com.pointswarm.common.dtos._
-import com.pointswarm.fireLegion._
-import com.pointswarm.fireLegion.messenger.SuccessResponse
+import com.pointswarm.domain.common.ProfileIdAgg
+import com.pointswarm.domain.profiling.Profile
+import com.pointswarm.domain.profiling.Profile._
+import com.scalasourcing.model.Projection
 import dispatch._
 import org.json4s.DynamicJValue._
 import org.json4s.Formats
 import org.json4s.JsonAST.JString
 import org.json4s.jackson.JsonMethods._
 
-import scala.concurrent.{Future, _}
+import scala.concurrent.{ExecutionContext, Future}
 
-class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Minion[FindSocialPictureCommand]
+class ProfilePaparazzi(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Projection[Profile.type]
 {
-    private lazy val profilesRoot: Firebase = root / "profiles"
+    private lazy val profilesRoot: Firebase = fb / "profiles"
 
-    override def execute(commandId: CommandId, command: FindSocialPictureCommand): Future[AnyRef] =
+    def project(id: Id, event: Event, eventIndex: Int): Future[AnyRef] =
     {
-        for
+        event match
         {
-            imageUrl <- findProfileImageUrl(command.provider, command.providerUid)
-            a <- setProfileImage(command.profileId, imageUrl)
-        } yield SuccessResponse
+            case Created(provider, data) =>
+                for
+                {
+                    imageUrl <- findProfileImageUrl(provider, getProviderUid(data))
+                    _ <- setProfileImage(id, imageUrl)
+                }
+                yield s"Profile: updated image of '$id' to '$imageUrl'"
+        }
+
     }
 
-
-    private def setProfileImage(profileId: ProfileId, imageUrl: String) =
-    {
-        profilesRoot / profileId / "image" <-- imageUrl
-    }
+    private def setProfileImage(id: ProfileIdAgg, imageUrl: String) = profilesRoot / id / "image" <-- imageUrl
 
     private def findProfileImageUrl(provider: ProviderType, providerUid: String): Future[String] =
     {
@@ -76,4 +78,6 @@ class Paparazzi(root: Firebase)(implicit f: Formats, ec: ExecutionContext) exten
     {
         "http://pointswarm.com/img/anonymous.png"
     }
+
+    private def getProviderUid(data: Map[String, AnyRef]) = data("id").toString
 }

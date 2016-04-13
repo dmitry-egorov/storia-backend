@@ -29,7 +29,7 @@ object FirebaseCommander
     }
 }
 
-abstract class FirebaseCommander(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Executor[AggregateResult]
+abstract class FirebaseCommander(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Executor
 {
     protected val ag: Aggregate
     protected val es: EventStorage[ag.type]
@@ -40,7 +40,7 @@ abstract class FirebaseCommander(fb: Firebase)(implicit f: Formats, ec: Executio
     lazy val inboxRef = rootRef / "inbox"
     lazy val resultsRef = rootRef / "results"
 
-    def run(completeWith: CancellationToken): Observable[Try[ag.Result]] =
+    def run(completeWith: CancellationToken): Observable[Try[CommandExecutionResult[ag.type]]] =
     {
         inboxRef
         .observeAdded
@@ -50,7 +50,7 @@ abstract class FirebaseCommander(fb: Firebase)(implicit f: Formats, ec: Executio
 
     def prepare(completeWith: CancellationToken) = Future.successful(())
 
-    private def execute(snapshot: DataSnapshot): Future[Try[ag.Result]] =
+    private def execute(snapshot: DataSnapshot): Future[Try[CommandExecutionResult[ag.type]]] =
     {
         try
         {
@@ -62,21 +62,24 @@ abstract class FirebaseCommander(fb: Firebase)(implicit f: Formats, ec: Executio
             }
     }
 
-    private def execute(id: CommandId, command: AggregateCommand[ag.Id, ag.Command]): Future[ag.Result] =
+    private def execute(commandId: CommandId, command: AggregateCommand[ag.Id, ag.Command]): Future[CommandExecutionResult[ag.type]] =
     {
         val payload = command.payload
+        val aggId = command.id
+        val addedOn = command.addedOn
         for
         {
-            result <- es.execute(command.id, payload)
-            _ <- writeResult(id, payload, command.addedOn, result)
-            _ <- removeCommand(id)
+            result <- es.execute(aggId, payload)
+            commandResult = CommandExecutionResult[ag.type](aggId, payload, result, addedOn, DateTime.now(DateTimeZone.UTC))
+            _ <- writeResult(commandId, commandResult)
+            _ <- removeCommand(commandId)
         }
-        yield result
+        yield commandResult
     }
 
-    def writeResult(id: CommandId, command: ag.Command, addedOn: DateTime, result: ag.Result) =
+    def writeResult(id: CommandId, commandResult: CommandExecutionResult[ag.type]) =
     {
-        resultsRef / id <-- CommandResult(command, result, addedOn, DateTime.now(DateTimeZone.UTC))
+        resultsRef / id <-- commandResult
     }
 
     private def removeCommand(id: CommandId) =

@@ -4,7 +4,7 @@ import java.util
 import java.util.concurrent.TimeoutException
 
 import org.json4s._
-import org.json4s.jackson.{JsonMethods, Serialization}
+import org.json4s.jackson.Serialization
 
 import scala.collection.JavaConversions._
 import scala.concurrent._
@@ -30,7 +30,8 @@ object Tools
 
     implicit class RichString(val str: String) extends AnyVal
     {
-        def read[T](implicit f: Formats, m: Manifest[T]) = {
+        def read[T](implicit f: Formats, m: Manifest[T]) =
+        {
             Serialization.read[T](str)
         }
     }

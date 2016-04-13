@@ -1,4 +1,4 @@
-package com.pointswarm.commands
+package com.pointswarm.common
 
 object ProviderType extends Enumeration
 {

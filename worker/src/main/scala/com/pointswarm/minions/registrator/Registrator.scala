@@ -3,14 +3,13 @@ package com.pointswarm.minions.registrator
 import com.dmitryegorov.futuristic.FutureExtensions._
 import com.dmitryegorov.hellfire.Hellfire._
 import com.firebase.client._
-import com.pointswarm.commands.ProviderType._
 import com.pointswarm.commands._
+import com.pointswarm.common.ProviderType._
 import com.pointswarm.common.dtos._
 import com.pointswarm.common.views._
 import com.pointswarm.fireLegion._
 import com.pointswarm.fireLegion.messenger.MessengerExtensions._
 import com.pointswarm.fireLegion.messenger.SuccessResponse
-import com.pointswarm.minions.paparazzi.FindSocialPictureCommand
 import org.json4s._
 
 import scala.concurrent._
@@ -27,7 +26,7 @@ class Registrator(root: Firebase)(implicit f: Formats, ec: ExecutionContext) ext
         val provider = command.provider
         val providerData = command.providerData
         val providerUid = getProviderUid(providerData)
-        val profileId = name.sanitize
+        val profileId = name.alias.value
 
         for
         {

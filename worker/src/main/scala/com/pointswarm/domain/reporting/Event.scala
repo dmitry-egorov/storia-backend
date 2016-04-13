@@ -19,7 +19,7 @@ object Event extends Aggregate
         def apply(event: Event) = event match
         {
             case Created(title) => ExistingEvent(title)
-            case _                => this
+            case _              => this
         }
 
         def apply(command: Command) = command match

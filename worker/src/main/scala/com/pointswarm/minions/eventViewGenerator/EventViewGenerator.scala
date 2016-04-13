@@ -18,7 +18,7 @@ class EventViewGenerator(root: Firebase)(implicit f: Formats, ec: ExecutionConte
     def execute(commandId: CommandId, command: AddEventCommand): Future[AnyRef] =
     {
         val title = command.title
-        val id = EventId(title.sanitize)
+        val id = EventId(title.alias)
 
         for
         {

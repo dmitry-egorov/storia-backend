@@ -8,12 +8,13 @@ import com.pointswarm.domain.voting.Upvote._
 import com.scalasourcing.model.Projection
 import org.json4s.Formats
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent._
+import scala.concurrent.duration._
 
 class HomeViewUpvotesBuilder(fb: Firebase)(implicit f: Formats, ec: ExecutionContext) extends Projection[Upvote.type]
 {
     private lazy val homeRef: Firebase = fb / "home"
-    private def eventRefOf(eventId: EventIdAgg): Firebase = homeRef / eventId.hash
+    private def eventRefOf(eventId: EventIdAgg): Firebase = homeRef / eventId
     private def previewRefOf(eventId: EventIdAgg): Firebase = eventRefOf(eventId) / "preview"
 
     def project(id: Id, event: Event, eventIndex: Int): Future[AnyRef] =
@@ -27,7 +28,7 @@ class HomeViewUpvotesBuilder(fb: Firebase)(implicit f: Formats, ec: ExecutionCon
         val eventId = id.reportId.eventId
         for
         {
-            currentPreviewHash <- (previewRefOf(eventId) / "id").awaitValue[String]()
+            currentPreviewHash <- (previewRefOf(eventId) / "id").awaitValue[String](10 seconds)
             r <-
             if (currentPreviewHash == id.reportId.hash)
                 updateUpvote(eventId, casted)

@@ -17,7 +17,7 @@ object Dependencies
     val toolsDependencies: Seq[ModuleID] = Seq(scalatest, json4s, rx, dispatcher, uri, scalatime, transliteration)
     val futuristicDependencies: Seq[ModuleID] = Seq(rx)
     val hellfireDependencies: Seq[ModuleID] = Seq(json4s, firebase, rx)
-    val scalasourcingDependencies: Seq[ModuleID] = Seq(scalatest)
+    val scalasourcingDependencies: Seq[ModuleID] = Seq(scalatest, scalatime)
     val scalasourcingFirebaseDependencies: Seq[ModuleID] = Seq(scalatest, scalatime)
     val storiaWorkerDependencies: Seq[ModuleID] = Seq(scalatest, scalaz, json4s, json4s_ext, rx, firebase, scalatime)
 }

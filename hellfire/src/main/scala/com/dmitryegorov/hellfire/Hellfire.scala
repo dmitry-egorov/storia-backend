@@ -135,6 +135,7 @@ object Hellfire
         def <--(value: Boolean)(implicit f: Formats): Future[String] = set(value)
         def <--(value: String)(implicit f: Formats): Future[String] = set(value)
         def <--(value: Any)(implicit f: Formats): Future[String] = set(value)
+        def <#-(value: Product)(implicit f: Formats): Future[String] = update(value)
         def <%-(value: Boolean)(implicit f: Formats): Future[String] = push(value)
         def <%-(value: String)(implicit f: Formats): Future[String] = push(value)
         def <%-(value: AnyRef)(implicit f: Formats): Future[String] = push(value)
@@ -153,6 +154,17 @@ object Hellfire
             val p = Promise[String]()
 
             ref.setValue(obj, createCompletionListener(p))
+
+            p.future
+        }
+
+        def update(value: Product)(implicit f: Formats): Future[String] =
+        {
+            val obj = value.toJValue.toJava.asInstanceOf[java.util.Map[String, AnyRef]]
+
+            val p = Promise[String]()
+
+            ref.updateChildren(obj, createCompletionListener(p))
 
             p.future
         }

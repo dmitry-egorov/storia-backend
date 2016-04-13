@@ -7,14 +7,14 @@ import rx.lang.scala.Observable
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-case class CompositeExecutor[T](executors: Seq[Executor[T]] = Seq.empty)(implicit ec: ExecutionContext) extends Executor[T]
+case class CompositeExecutor(executors: Seq[Executor] = Seq.empty)(implicit ec: ExecutionContext) extends Executor
 {
-    def and(executor: Executor[T]): CompositeExecutor[T] =
+    def and(executor: Executor): CompositeExecutor =
     {
         copy(executors = executors ++ Seq(executor))
     }
 
-    def run(completeWith: CancellationToken): Observable[Try[T]] =
+    def run(completeWith: CancellationToken): Observable[Try[ExecutionResult]] =
     {
         val all = executors.map(e => e.run(completeWith))
         Observable.from(all).flatten
